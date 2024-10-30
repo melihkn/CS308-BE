@@ -59,6 +59,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Serve static files from the "static" directory which are images
+from fastapi.staticfiles import StaticFiles
+app.mount("/static", StaticFiles(directory="static"), name="static")
+'''
+With this configuration, any file in the static directory can be accessed via a URL like:
+    http://127.0.0.1:8000/static/images/Cat-Litter-Pellet-Litter-Angle-5copy_2000x.jpg in the browser of the machine in which server is running.
+
+These image paths will be stored in the database and used in the frontend to display the images. However,
+we only store the relative path according to the static directory. For example:
+'images/product123.jpg' -> relative path according to the static directory in the backend directory. 
+'''
+
 
 # SQLAlchemy setup
 DATABASE_URL = "mysql+pymysql://root:TunahanTunahan987.%2C@127.0.0.1:3306/CS308_Project"
@@ -135,6 +147,16 @@ async def login(request: LoginRequest, db: Session = Depends(get_db)):
 # Endpoint for registration
 @app.post("/register")
 async def register(request: RegisterRequest, db: Session = Depends(get_db)):
+    '''
+    Function to register a new user in the backend. It checks if the user already exists and then creates a new user.
+
+    Parameters:
+        - request: RegisterRequest model containing user details
+        - db: Database session dependency
+    
+    Returns:
+        - Message indicating successful registration and the user ID
+    '''
     # Check if the user already exists
     existing_user = db.query(Customer).filter(Customer.email == request.email).first()
     if existing_user:
@@ -166,39 +188,46 @@ def test(db: Session = Depends(get_db)):
     customers = db.query(Customer).all()
     return customers
 
-
-@app.get("/users/me")
-async def get_user_me(token: str = Depends(oauth2_scheme)):
-    """Retrieve the current logged-in user using JWT token."""
+# Endpoint to check login status 
+@app.get("/auth/status")
+async def check_login_status(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     '''
         An endpoint that verifies the JWT token, extracts the user’s email from it, and returns it if valid.
 
-        Usage: This function is useful in applications where users need to verify their 
-        login status or request their profile information securely via JWT tokens. 
-        If the token is valid, the user’s email is returned; if not, a 401 Unauthorized error is raised.
+        Usage: when user logged in, frontend sends the email and password to the backend to get the token.
+        Backends fetch the db and check the user's email and password. If it is correct, it returns the token.
+        Frontend stores the token in the local storage. When the user tries to access a protected route, 
+        frontend sends the token in the Authorization header. Backend checks the token and returns the user's data.
+
 
         Our usage: Frontend sends a GET request to the /users/me endpoint to 
         authenticate the user. The token is sent in the Authorization header.
 
         parameters:
             - token: JWT token sent by the frontend in the Authorization header
+            - db: Database session dependency (to query the user from the database)
     
         returns:
+            - isLoggedIn: True if the user is authenticated, False otherwise
+            - userId: User ID of the authenticated user
+            - name: Name of the authenticated user
+            - surname: Surname of the
             - email: email of the user decoded from the token
     '''
     try:
-        # decode the token and get the email (only email is used to create the token)
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        # get the email from the payload which is decoded from the token 
         email: str = payload.get("sub")
-        # if email is None, raise an exception which means user is not authenticated (logged in)
         if email is None:
             raise HTTPException(status_code=401, detail="Invalid credentials")
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-    # if user correctly authenticated, return the email to the user (frontend)
-    return {"email": email}
+    # find the user from the database using email
+    user = db.query(Customer).filter(Customer.email == email).first()
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return {"isLoggedIn": True, "userId": user.user_id, "name": user.name, "surname": user.surname, "email" : user.email, "phone_number": user.phone_number}
 
 
 # a protected route to see user profile
@@ -241,6 +270,84 @@ async def get_profile(token: str = Depends(oauth2_scheme), db: Session = Depends
         "phone_number": user.phone_number
     }
 
+# Cart management for logged-in users
+class CartItem(BaseModel):
+    product_id: str
+    quantity: int
+
+@app.post("/cart/add")
+async def add_to_cart(cart_item: CartItem, customer_id: str, db: Session = Depends(get_db)):
+    '''
+    Accepts CartItem data, which includes product_id and quantity, along with customer_id for the logged-in user.
+    Checks for an active cart for the user and creates one if it doesn’t exist.
+    Adds the item to the persistent cart in the database. (if the user is logged in)
+
+    params:
+        - cart_item: CartItem model containing product_id and quantity
+        - customer_id: ID of the logged-in user
+        - db: Database session dependency
+    
+    returns:
+        - Message indicating the item has been added to the cart
+
+    '''
+    # Fetch or create an active cart for the logged-in user
+    cart = db.query(ShoppingCart).filter(ShoppingCart.customer_id == customer_id, ShoppingCart.cart_status == "active").first()
+    if not cart:
+        cart = ShoppingCart(customer_id=customer_id, cart_status="active")
+        db.add(cart)
+        db.commit()
+
+    # Add the item to the cart
+    cart_item_instance = ShoppingCartItem(cart_id=cart.cart_id, product_id=cart_item.product_id, quantity=cart_item.quantity)
+    db.add(cart_item_instance)
+    db.commit()
+    return {"message": "Item added to cart"}
+
+@app.post("/cart/merge")
+async def merge_cart(items: list[CartItem], customer_id: str, db: Session = Depends(get_db)):
+    '''
+    Merge session-based cart items into user's persistent cart after login.
+
+    Adds the item to the persistent cart in the database. For each item in the temporary cart, it creates a corresponding 
+    ShoppingCartItem in the user’s database-backed cart.
+
+    params:
+        - items: List of CartItem models containing product_id and quantity
+        - customer_id: ID of the logged-in user
+        - db: Database session dependency
+    
+    returns:
+        - Message indicating the temporary cart has been merged with the persistent cart (JSON response)
+    '''
+    cart = db.query(ShoppingCart).filter(ShoppingCart.customer_id == customer_id, ShoppingCart.cart_status == "active").first()
+    if not cart:
+        cart = ShoppingCart(customer_id=customer_id, cart_status="active")
+        db.add(cart)
+        db.commit()
+
+    for item in items:
+        cart_item_instance = ShoppingCartItem(cart_id=cart.cart_id, product_id=item.product_id, quantity=item.quantity)
+        db.add(cart_item_instance)
+
+    db.commit()
+    return {"message": "Temporary cart merged with persistent cart"}
+
+
+# function to return popular items last week - but for now, it just returns all the products in the item
+@app.get("/products")
+async def get_products(db: Session = Depends(get_db)):
+    """
+    Endpoint to retrieve all products.
+    
+    Parameters:
+        - db: Database session
+
+    Returns:
+        - List of products with relevant fields
+    """
+    products = db.query(Product).all()  # Fetch all products
+    return products
 
 '''
 users:
@@ -250,3 +357,4 @@ b@gmail.com - 123456
 
 to run the app: uvicorn main:app --reload
 '''
+
