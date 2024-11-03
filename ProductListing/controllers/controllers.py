@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Path
+import uuid
 from sqlalchemy.orm import Session
 from typing import List
 from models.models import Product, ProductCreate, ProductUpdate
@@ -13,12 +14,13 @@ async def get_all_products(db: Session = Depends(get_db)):
     return service.get_all_products()
 
 @router.get("/{product_id}", response_model=Product)
-async def get_product(product_id: uuid.UUID, db: Session = Depends(get_db)):
+async def get_product(product_id: str = Path(..., regex=r"^[a-fA-F0-9-]{36}$"), db: Session = Depends(get_db)):
     service = ProductService(db)
     product = service.get_product_by_id(product_id)
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     return product
+
 
 @router.post("/", response_model=Product, status_code=201)
 async def create_product(product: ProductCreate, db: Session = Depends(get_db)):
