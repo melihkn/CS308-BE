@@ -101,3 +101,16 @@ class Product(Base):
 
     def __repr__(self):
         return f"<Product(name={self.name}, model={self.model}, quantity={self.quantity})>"
+
+
+from pydantic import BaseModel
+
+# pdyanctic model for the cart item which is to be used when adding an item to the cart with certain quantity
+class CartItem(BaseModel):
+    product_id: str
+    quantity: int
+
+# Pydantic model for product quantity adjustments coming from the frontend (for proper type hinting)
+class CartAdjustment(BaseModel):
+    product_id: str
+    customer_id: str
