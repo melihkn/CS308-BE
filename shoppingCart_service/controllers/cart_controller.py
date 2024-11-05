@@ -21,7 +21,11 @@ async def add_to_cart(cart_item: CartItem, customer_id: str = None, db: Session 
     - If `customer_id` is not provided, the frontend will handle session-based storage.
     """
     if customer_id:
-        return CartService.add_item_to_persistent_cart(cart_item, customer_id, db)
+        try:
+            CartService.add_item_to_persistent_cart(cart_item, customer_id, db)
+            return {"message": "Item added to persistent cart.", "cart_items": CartService.get_cart(customer_id, db)}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail="Could not add item to cart.")
     else:
         return {"message": "Item added to session-based cart (handled on frontend)."}
 
@@ -46,4 +50,54 @@ async def get_cart(customer_id: str, db: Session = Depends(get_db)):
     Get the user's shopping cart.
     """
     return CartService.get_cart(customer_id, db)
+
+@router.delete("/cart/clear/{customer_id}")
+async def clear_cart(customer_id: str, db: Session = Depends(get_db)):
+    """
+    Clear the user's shopping cart.
+    """
+    return CartService.clear_cart(customer_id, db)
+
+@router.patch("/cart/decrease_quantity")
+async def decrease_item_quantity(product_id: str, customer_id: str, db: Session = Depends(get_db)):
+    """
+    Decrease the quantity of an item by 1 in the cart.
+    - If the quantity is already 1, remove the item.
+
+    params:
+    - product_id: str
+    - customer_id: str
+    - db: Session
+
+    returns:
+    - a message indicating the success of the operation coming from the CartService.decrease_item_quantity method
+    """
+    try:
+        result = CartService.decrease_item_quantity(product_id, customer_id, db)
+        return result
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Could not decrease item quantity in the cart.")
+
+@router.patch("/cart/increase_quantity")
+async def increase_item_quantity(product_id: str, customer_id: str, db: Session = Depends(get_db)):
+    """
+    Increase the quantity of an item by 1 in the cart.
+
+    params:
+    - product_id: str
+    - customer_id: str
+    - db: Session
+
+    returns:
+    - a message indicating the success of the operation coming from the CartService.increase_item_quantity method
+    """
+    try:
+        result = CartService.increase_item_quantity(product_id, customer_id, db)
+        return result
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Could not increase item quantity in the cart.")
 

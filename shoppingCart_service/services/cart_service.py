@@ -133,6 +133,7 @@ class CartService:
     def decrease_item_quantity(product_id, customer_id, db: Session):
         '''
         This function decreases the quantity of an item in the persistent cart of a customer in the database.
+        If item quantity is already 1, the item is removed from the cart.
 
         Parameters:
         - product_id: the ID of the product whose quantity will be decreased in the cart.
@@ -156,3 +157,65 @@ class CartService:
             db.delete(item)
         db.commit()
         return {"message": "Item quantity decreased in the cart"}
+
+    # function to increase the quantity of an item by 1 in the cart (maybe needed for the frontend later)
+    @staticmethod
+    def increase_item_quantity(product_id, customer_id, db: Session):
+        '''
+        This function increases the quantity of an item in the persistent cart of a customer in the database.
+
+        Parameters:
+        - product_id: the ID of the product whose quantity will be increased in the cart.
+        - customer_id: the ID of the customer whose cart the item is in.
+        - db: the database session.
+
+        Returns:
+        - a dictionary with the key "message" and a string value indicating that the item quantity has been increased in the cart.
+        '''
+        cart = db.query(ShoppingCart).filter(ShoppingCart.customer_id == customer_id, ShoppingCart.cart_status == "active").first()
+        if not cart:
+            raise HTTPException(status_code=404, detail="Cart not found")
+
+        item = db.query(ShoppingCartItem).filter(ShoppingCartItem.cart_id == cart.cart_id, ShoppingCartItem.product_id == product_id).first()
+        if not item:
+            raise HTTPException(status_code=404, detail="Item not found in cart")
+
+        item.quantity += 1
+        db.commit()
+        return {"message": "Item quantity increased in the cart"}
+
+
+    # function to clear the cart of a customer
+    @staticmethod
+    def clear_cart(customer_id, db: Session):
+        '''
+        This function clears the cart of a customer in the database. However, it does not delete the cart itself. It
+        remains as active in the shopping card table. 
+
+        Parameters:
+        - customer_id: the ID of the customer whose cart will be cleared.
+        - db: the database session.
+
+        Returns:
+        - a dictionary with the key "message" and a string value indicating that the cart has been cleared.
+        '''
+        # it clears the first active cart of the customer
+        cart = db.query(ShoppingCart).filter(ShoppingCart.customer_id == customer_id, ShoppingCart.cart_status == "active").first()
+        if not cart:
+            raise HTTPException(status_code=404, detail="Cart not found")
+
+        items = db.query(ShoppingCartItem).filter(ShoppingCartItem.cart_id == cart.cart_id).all()
+        for item in items:
+            db.delete(item)
+        db.commit()
+        return {"message": "Cart cleared"}
+
+
+'''
+- Total Cost Calculation -> when we have the products table, we can calculate the total cost of the items in the cart.
+- Detailed Cart Item View: Expand the get_cart method to return more detailed information about each item, such as the product name, price, description, and image URL
+- applying discount to the cart when we have the discount table
+- Cart Expiry maybe?
+- Custom Sorting Options: Allow users to view and sort items in the cart (e.g., by price, popularity, etc.), which can be handy for larger shopping lists.
+-  Add a prepare_checkout endpoint that checks for item availability and locks stock temporarily to prevent overselling.
+'''
