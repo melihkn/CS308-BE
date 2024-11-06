@@ -1,14 +1,17 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
 
 # Replace with your actual MySQL connection string
-DATABASE_URL = "mysql+mysqlconnector://user:password@localhost:3306/Myvet_db"
+DATABASE_URL = "mysql+pymysql://melihkaan:MelihKN_53@localhost:3306/my_database"
 
 # Create an engine
 engine = create_engine(DATABASE_URL)
 
 # Create a configured "Session" class
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+Base = declarative_base()
 
 # Dependency to get the session
 def get_db():
