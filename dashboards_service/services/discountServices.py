@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from models.models import Discount, Product, Wishlist, WishlistItem, Customer
 from datetime import datetime
 
@@ -24,21 +24,24 @@ def create_discount_service(db: Session, discount_data):
     db.commit()
     db.refresh(discount)
 
-    # Step 2: Find customers with the product in their wishlist
+    # Step 2: Find the product and validate it exists
     product = db.query(Product).filter(Product.product_id == discount_data.product_id).first()
     if not product:
         raise ValueError("Product not found")
 
-    # Query for customers with this product in their wishlist
-    wishlist_items = db.query(WishlistItem).join(Wishlist).filter(
-        WishlistItem.product_id == discount_data.product_id
-    ).all()
+    # Step 3: Find customers who have this product in their wishlist
+    # Explicitly join WishlistItem, Wishlist, and Customer to get customer information
+    customers = (
+        db.query(Customer.email)
+        .join(Wishlist, Wishlist.customer_id == Customer.user_id)
+        .join(WishlistItem, WishlistItem.wishlist_id == Wishlist.wishlist_id)
+        .filter(WishlistItem.product_id == discount_data.product_id)
+        .all()
+    )
 
-    # Step 3: Notify each customer
-    for item in wishlist_items:
-        customer = db.query(Customer).filter(Customer.user_id == item.wishlist.customer_id).first()
-        if customer and customer.email:
-            send_notification(customer.email, product.name, discount_data.discount_rate)
+    # Step 4: Send notifications to each customer
+    for customer_email, in customers:
+        send_notification(customer_email, product.name, discount_data.discount_rate)
 
     return discount
     
