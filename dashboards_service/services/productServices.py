@@ -1,3 +1,4 @@
+from decimal import Decimal
 from sqlalchemy.orm import Session
 from models.models import Product
 from datetime import datetime
@@ -28,3 +29,12 @@ def delete_product_service(db: Session, product_id: str):
         db.delete(product)
         db.commit()
     return {"message": "product deleted successfully"}
+
+def set_product_price(db: Session, product_id: str, new_price: Decimal):
+    product = db.query(Product).filter_by(product_id=product_id).first()
+    if not product:
+        return None
+    product.price = new_price
+    db.commit()
+    db.refresh(product)
+    return product

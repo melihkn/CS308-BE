@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from services.productServices import get_products, create_product_service, update_product_service, delete_product_service
+from services.productServices import get_products, create_product_service, update_product_service, delete_product_service, set_product_price
 from dbContext import get_db
 from models.models import Product
 from pydantic import BaseModel, ConfigDict , Field
@@ -21,6 +21,7 @@ class ProductCreate(BaseModel):
     quantity: int = 0
     warranty_status: Optional[int] = None
     distributor: Optional[str] = None
+    price: Decimal = Field(default=0.00)
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -28,6 +29,8 @@ class ProductCreate(BaseModel):
 class ProductRead(ProductCreate):
     product_id: str
 
+class SetPriceRequest(BaseModel):
+    price: Decimal
 
 router = APIRouter()
 
@@ -35,3 +38,9 @@ router = APIRouter()
 def read_discounts(db: Session = Depends(get_db)):
     return get_products(db)
 
+@router.patch("/products/{product_id}/set-price", response_model=ProductRead)
+def set_product_price_endpoint(product_id: str, price_data: SetPriceRequest, db: Session = Depends(get_db)):
+    product = set_product_price(db, product_id, price_data.price)
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    return product
