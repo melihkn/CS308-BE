@@ -13,7 +13,7 @@ def create_order_service(db: Session, order_data):
     return order
 
 def update_order_service(db: Session, order_id: str, order_data):
-    order = db.query(order).filter_by(order_id=order_id).first()
+    order = db.query(Order).filter_by(order_id=order_id).first()
     if order:
         for key, value in order_data.dict().items():
             setattr(order, key, value)
@@ -22,7 +22,7 @@ def update_order_service(db: Session, order_id: str, order_data):
     return order
 
 def delete_order_service(db: Session, order_id: str):
-    order = db.query(order).filter_by(order_id=order_id).first()
+    order = db.query(Order).filter_by(order_id=order_id).first()
     if order:
         db.delete(order)
         db.commit()
@@ -40,7 +40,7 @@ def create_orderItem_service(db: Session, orderItem_data):
     return orderItem
 
 def update_orderItem_service(db: Session, orderItem_id: str, orderItem_data):
-    orderItem = db.query(orderItem).filter_by(orderItem_id=orderItem_id).first()
+    orderItem = db.query(OrderItem).filter_by(orderItem_id=orderItem_id).first()
     if orderItem:
         for key, value in orderItem_data.dict().items():
             setattr(orderItem, key, value)
@@ -49,7 +49,7 @@ def update_orderItem_service(db: Session, orderItem_id: str, orderItem_data):
     return orderItem
 
 def delete_orderItem_service(db: Session, orderItem_id: str):
-    orderItem = db.query(orderItem).filter_by(orderItem_id=orderItem_id).first()
+    orderItem = db.query(OrderItem).filter_by(orderItem_id=orderItem_id).first()
     if orderItem:
         db.delete(orderItem)
         db.commit()
