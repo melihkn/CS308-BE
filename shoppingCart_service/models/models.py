@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, ForeignKey, Text, CHAR
+from sqlalchemy import Column, String, Integer, ForeignKey, Text, CHAR, DECIMAL, VARCHAR
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
@@ -85,19 +85,19 @@ class SalesManager(Base):
 class Product(Base):
     __tablename__ = 'products'
 
-    # Columns
-    product_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    name = Column(String(100), nullable=False)
-    model = Column(String(50), nullable=False)
+    # columns of the table
+    product_id = Column(CHAR(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    name = Column(VARCHAR(100), nullable=False)
+    model = Column(VARCHAR(50), nullable=False)
     description = Column(Text, nullable=True)
-    category_id = Column(Integer, ForeignKey('category.category_id', ondelete="SET NULL"), nullable=True)
-    pm_id = Column(CHAR(36), ForeignKey('product_managers.pm_id', ondelete="SET NULL"), nullable=True)
-    sm_id = Column(CHAR(36), ForeignKey('sales_managers.sm_id', ondelete="SET NULL"), nullable=True)
-    serial_number = Column(String(100), unique=True, nullable=False)
+    category_id = Column(Integer, ForeignKey('category.category_id', ondelete='SET NULL'), nullable=True)
+    serial_number = Column(VARCHAR(100), unique=True, nullable=False)
     quantity = Column(Integer, nullable=False, default=0)
     warranty_status = Column(Integer, nullable=True)
-    distributor = Column(String(100), nullable=True)
-    image_url = Column(String(255), nullable=True)  # for the relative path of the image in the backend
+    distributor = Column(VARCHAR(100), nullable=True)
+    image_url = Column(VARCHAR(255), nullable=True)
+    price = Column(DECIMAL(10, 2), nullable=False, default=0.00)
+    item_sold = Column(Integer, nullable=False, default=0)
 
     def __repr__(self):
         return f"<Product(name={self.name}, model={self.model}, quantity={self.quantity})>"
