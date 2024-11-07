@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, Path, status
+from fastapi import Request,APIRouter, Depends, HTTPException, Path, status
 import uuid
 from sqlalchemy.orm import Session
 from typing import List
-from models.models import Product, ProductCreate, ProductUpdate
+from models.models import Product, ProductCreate, ProductUpdate,ProductDB
 from services.services import ProductService
 from dbContext import get_db  # This dependency function provides the database session
 
@@ -64,3 +64,23 @@ def delete_product(product_id: uuid.UUID, db: Session = Depends(get_db)):
     if not success:
         raise HTTPException(status_code=404, detail="Product not found")
     return None
+
+@router.post("/search")
+async def search_products(request: Request, db: Session = Depends(get_db)):
+    """
+    Search products based on the input query from the user.
+    """
+    data = await request.json()
+    query = data.get("query", "").strip()  # Get the search query from the request body
+
+    if not query:
+        raise HTTPException(status_code=400, detail="Search query cannot be empty.")
+
+    # Query the database for matching products
+    results = db.query(ProductDB).filter(
+        (ProductDB.name.ilike(f"%{query}%")) |  # Case-insensitive search for name
+        (ProductDB.description.ilike(f"%{query}%"))  # Case-insensitive search for description
+    ).all()
+    
+    # Convert results to a list of dictionaries to return as JSON
+    return results
