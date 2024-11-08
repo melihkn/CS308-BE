@@ -6,6 +6,8 @@ from fastapi import Path
 from sqlalchemy.exc import IntegrityError
 
 
+
+
 class ProductService:
     def __init__(self, db: Session):
         self.db = db
@@ -82,3 +84,12 @@ class ProductService:
         self.db.commit()  # No await here
         return True
 
+    def search_product_by_name_description(self,query):
+
+        results = self.db.query(ProductDB).filter(
+        (ProductDB.name.ilike(f"%{query}%")) |  # Case-insensitive search for name
+        (ProductDB.description.ilike(f"%{query}%"))  # Case-insensitive search for description
+        ).all()
+    
+        # Convert results to a list of dictionaries to return as JSON
+        return results

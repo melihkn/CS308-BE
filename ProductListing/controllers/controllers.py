@@ -76,11 +76,7 @@ async def search_products(request: Request, db: Session = Depends(get_db)):
     if not query:
         raise HTTPException(status_code=400, detail="Search query cannot be empty.")
 
+    service = ProductService(db)
+    return service.search_product_by_name_description(query)
     # Query the database for matching products
-    results = db.query(ProductDB).filter(
-        (ProductDB.name.ilike(f"%{query}%")) |  # Case-insensitive search for name
-        (ProductDB.description.ilike(f"%{query}%"))  # Case-insensitive search for description
-    ).all()
     
-    # Convert results to a list of dictionaries to return as JSON
-    return results
