@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from models.models import Customer
+from models.models import Customer, ProductManager, SalesManager, Admin
 from utils.jwt_utils import create_access_token, decode_access_token
 from utils.hashing_utils import hash_password, verify_password
 from fastapi import HTTPException, status
@@ -32,27 +32,89 @@ class AuthService:
                 - phone_number (str): The phone number of the logged in user.
         '''
         try:
+            # Decode the token to get email and role
             payload = decode_access_token(token)
             email: str = payload.get("sub")
-            if not email:
-                raise HTTPException(status_code=401, detail="Invalid credentials")
+            role: str = payload.get("role")
+            if not email or not role:
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
         except Exception as e:
-            raise HTTPException(status_code=401, detail="Invalid token")
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
-        user = db.query(Customer).filter(Customer.email == email).first()
+        # Initialize user as None and check the correct table based on role
+        user = None
+        if role == "customer":
+            user = db.query(Customer).filter(Customer.email == email).first()
+        elif role == "product_manager":
+            user = db.query(ProductManager).filter(ProductManager.email == email).first()
+        elif role == "sales_manager":
+            user = db.query(SalesManager).filter(SalesManager.email == email).first()
+        elif role == "admin":
+            user = db.query(Admin).filter(Admin.email == email).first()
+
+        # If no user is found, raise an exception
         if not user:
-            raise HTTPException(status_code=404, detail="User not found")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
+        # Return user information if valid
         return {
             "isLoggedIn": True,
-            "userId": user.user_id,
+            "userId": getattr(user, "user_id", None),
             "name": user.name,
             "surname": user.surname,
             "email": user.email,
-            "phone_number": user.phone_number
-    }
+            "phone_number": user.phone_number,
+            "role": role
+        }
 
+    # new version of login function
+    def login(request, db: Session):
+        '''
+            Function to authenticate a user.
+                It queries the database for a user with the given email address and verifies the password.
+                If the user is found and the password is correct, the method generates an access token using the create_access_token function from the jwt_utils module.
 
+            Parameters:
+                request: LoginRequest - A pydantic model representing the user login request. 
+                    - email: EmailStr - The user's email address.
+                    - password: str - The user's password.
+                db: Session - A SQLAlchemy database session.
+            
+            Returns:    
+                dict: A dictionary containing the access token and token type.
+        '''
+        user = None
+        role = None
+
+        # Check each table for a user match
+        user = db.query(Customer).filter(Customer.email == request.email).first()
+        if user:
+            role = "customer"
+        else:
+            user = db.query(ProductManager).filter(ProductManager.email == request.email).first()
+            if user:
+                role = "product_manager"
+            else:
+                user = db.query(SalesManager).filter(SalesManager.email == request.email).first()
+                if user:
+                    role = "sales_manager"
+                else:
+                    user = db.query(Admin).filter(Admin.email == request.email).first()
+                    if user:
+                        role = "admin"
+
+        # If user is not found in any role-based table
+        if not user or not verify_password(request.password, user.password):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid email or password"
+            )
+
+        # Generate access token with email and role
+        access_token = create_access_token(data={"sub": user.email, "role": role})
+        return {"access_token": access_token, "token_type": "bearer"}
+
+    """
     @staticmethod
     def login(request, db: Session):
         '''
@@ -69,12 +131,20 @@ class AuthService:
             Returns:    
                 dict: A dictionary containing the access token and token type.
         '''
+
+        # we would check all the tables in the database to see if the user exists
+
+        # is the user a customer?
         user = db.query(Customer).filter(Customer.email == request.email).first()
+
+       
+
         if not user or not verify_password(request.password, user.password):
             raise HTTPException(status_code=400, detail="Invalid email or password")
         # create access token from the data (user's email) and expiration time and return it to the frontend in the response object
-        access_token = create_access_token(data={"sub": user.email})
+        access_token = create_access_token(data={"sub": user.email, "user_id": user.user_id})
         return {"access_token": access_token, "token_type": "bearer"}
+    """
 
     @staticmethod
     def register(request, db: Session):
