@@ -6,7 +6,7 @@ from sqlalchemy.orm import declarative_base
 DATABASE_URL = "mysql+pymysql://root:MelihKN_53@localhost:3306/Myvet_db"
 
 # Create an engine
-engine = create_engine(DATABASE_URL)
+engine = create_engine(SQLALCHEMY_DATABASE_URI)
 
 # Create a configured "Session" class
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
