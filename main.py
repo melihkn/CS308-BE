@@ -1,5 +1,4 @@
 from passlib.context import CryptContext
-from passlib.context import CryptContext
 from fastapi import FastAPI, Depends, HTTPException,status
 from sqlalchemy.orm import Session
 from sqlalchemy.ext.declarative import declarative_base
@@ -14,6 +13,10 @@ from datetime import datetime, timedelta
 from fastapi.middleware.cors import CORSMiddleware
 # this is for the JWT token to be able to authenticate the user
 from fastapi.security import OAuth2PasswordBearer
+from fastapi import  Request
+from typing import List
+from ProductListing.dbContext import get_db
+from ProductListing.models import Product
 
 # JWT configuration
 SECRET_KEY = "e8e7e4"
@@ -73,7 +76,7 @@ we only store the relative path according to the static directory. For example:
 
 
 # SQLAlchemy setup
-DATABASE_URL = "mysql+pymysql://root:TunahanTunahan987.%2C@127.0.0.1:3306/CS308_Project"
+DATABASE_URL = "mysql+pymysql://root:lokmata23@127.0.0.1:3306/myvet_db" 
 engine = create_engine(DATABASE_URL)
 # to make changes on the real database (local) -> we need to create a session
 SessionLocal = sessionmaker( bind=engine)
@@ -348,6 +351,7 @@ async def get_products(db: Session = Depends(get_db)):
     """
     products = db.query(Product).all()  # Fetch all products
     return products
+
 
 '''
 users:
