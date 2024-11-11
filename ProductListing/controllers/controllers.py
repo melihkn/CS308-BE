@@ -1,12 +1,8 @@
-<<<<<<< HEAD
 from fastapi import APIRouter, Depends, HTTPException, Path, status, Request
-=======
-from fastapi import Request,APIRouter, Depends, HTTPException, Path, status
->>>>>>> 52365734bd0b8b702922c978eee19ebecb4f7a90
 import uuid
 from sqlalchemy.orm import Session
 from typing import List
-from models.models import Product, ProductCreate, ProductUpdate,ProductDB
+from models.models import Product, ProductCreate, ProductUpdate
 from services.services import ProductService
 from dbContext import get_db  # This dependency function provides the database session
 
@@ -101,11 +97,8 @@ def delete_product(product_id: uuid.UUID, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Product not found")
     return None
 
-<<<<<<< HEAD
 
 
-=======
->>>>>>> 52365734bd0b8b702922c978eee19ebecb4f7a90
 @router.post("/search")
 async def search_products(request: Request, db: Session = Depends(get_db)):
     """
@@ -117,17 +110,6 @@ async def search_products(request: Request, db: Session = Depends(get_db)):
     if not query:
         raise HTTPException(status_code=400, detail="Search query cannot be empty.")
 
-<<<<<<< HEAD
     service = ProductService(db)
     return service.search_product_by_name_description(query)
     # Query the database for matching products
-=======
-    # Query the database for matching products
-    results = db.query(ProductDB).filter(
-        (ProductDB.name.ilike(f"%{query}%")) |  # Case-insensitive search for name
-        (ProductDB.description.ilike(f"%{query}%"))  # Case-insensitive search for description
-    ).all()
-    
-    # Convert results to a list of dictionaries to return as JSON
-    return results
->>>>>>> 52365734bd0b8b702922c978eee19ebecb4f7a90
