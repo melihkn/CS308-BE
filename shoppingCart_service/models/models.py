@@ -114,3 +114,4 @@ class CartItem(BaseModel):
 class CartAdjustment(BaseModel):
     product_id: str
     customer_id: str
+
