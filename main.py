@@ -73,7 +73,7 @@ we only store the relative path according to the static directory. For example:
 
 
 # SQLAlchemy setup
-DATABASE_URL = "mysql+pymysql://root:TunahanTunahan987.%2C@127.0.0.1:3306/CS308_Project"
+DATABASE_URL = "mysql+pymysql://root:MelihKN_53@localhost:3306/Myvet_db"
 engine = create_engine(DATABASE_URL)
 # to make changes on the real database (local) -> we need to create a session
 SessionLocal = sessionmaker( bind=engine)
@@ -292,14 +292,16 @@ async def add_to_cart(cart_item: CartItem, customer_id: str, db: Session = Depen
 
     '''
     # Fetch or create an active cart for the logged-in user
+    print("Deneme1")
     cart = db.query(ShoppingCart).filter(ShoppingCart.customer_id == customer_id, ShoppingCart.cart_status == "active").first()
     if not cart:
         cart = ShoppingCart(customer_id=customer_id, cart_status="active")
         db.add(cart)
         db.commit()
-
+    print("Deneme2")
     # Add the item to the cart
     cart_item_instance = ShoppingCartItem(cart_id=cart.cart_id, product_id=cart_item.product_id, quantity=cart_item.quantity)
+    print("Deneme3")
     db.add(cart_item_instance)
     db.commit()
     return {"message": "Item added to cart"}

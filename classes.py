@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, CHAR, Integer, ForeignKey, Text
+from sqlalchemy import DECIMAL, Column, String, CHAR, Integer, ForeignKey, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
@@ -81,8 +81,9 @@ class Product(Base):
     model = Column(String(50), nullable=False)
     description = Column(Text, nullable=True)
     category_id = Column(Integer, ForeignKey('category.category_id', ondelete="SET NULL"), nullable=True)
-    pm_id = Column(CHAR(36), ForeignKey('product_managers.pm_id', ondelete="SET NULL"), nullable=True)
-    sm_id = Column(CHAR(36), ForeignKey('sales_managers.sm_id', ondelete="SET NULL"), nullable=True)
+    item_sold = Column(Integer, nullable=False, default=0)
+    price = Column(DECIMAL(10, 2), nullable=False)
+    cost = Column(DECIMAL(10, 2), nullable=False)
     serial_number = Column(String(100), unique=True, nullable=False)
     quantity = Column(Integer, nullable=False, default=0)
     warranty_status = Column(Integer, nullable=True)

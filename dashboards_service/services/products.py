@@ -14,7 +14,7 @@ def delete_products(db: Session, product_id: str):
         return None
     db.delete(product)
     db.commit()
-    return product
+    return {"message": "Product deleted successfully"}
 
 def get_product_by_id(db: Session, product_id: str):
     return db.query(Product).filter(Product.product_id == product_id).first()
@@ -37,7 +37,7 @@ def update_product(db: Session, product_id : int, productUpdate)-> Optional[Prod
     return product
 
 def create_product(db: Session, product):
-    db_product = Product(**product.model_dump())
+    db_product = Product(**product.dict())
     db.add(db_product)
     db.commit()
     db.refresh(db_product)
@@ -52,3 +52,6 @@ def update_product_quantity(db: Session, product_id: str, quantity: int):
     db.commit()
     db.refresh(product)
     return product
+
+def get_products_by_category_id(db: Session, category_id: str):
+    return db.query(Product).filter(Product.category_id == category_id).all()
