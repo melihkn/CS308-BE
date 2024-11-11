@@ -12,8 +12,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 
 app = FastAPI(
-    title="MyVet Online Store - Product Manager Dashboard",
-    description="API for Product Manager Dashboard",
+    title="MyVet Online Store - Dashboards Service",
+    description="API for Product Manager - Sales Manager Dashboards",
     version="1.0.0"
 )
 
