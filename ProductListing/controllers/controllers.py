@@ -8,6 +8,24 @@ from dbContext import get_db  # This dependency function provides the database s
 
 router = APIRouter(prefix="/products", tags=["Products"])
 
+
+@router.get("/{product_id}/category", response_model=dict)
+def get_product_category(product_id: str, db: Session = Depends(get_db)):
+    """
+    Get the category information for a specific product.
+    
+    Args:
+        product_id (str): The ID of the product to fetch the category for.
+        db (Session): The database session dependency.
+        
+    Returns:
+        dict: The category information.
+    """
+    # Fetch the product from the database
+    service = ProductService(db)
+    return service.get_category_info_of_product(product_id)
+    
+
 @router.get("/", response_model=List[Product])
 async def get_all_products(db: Session = Depends(get_db)):
     service = ProductService(db)

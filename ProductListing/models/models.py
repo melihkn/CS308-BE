@@ -84,6 +84,24 @@ class Category(Base):
     def __repr__(self):
         return f"<Category(category_name={self.category_name}, parentcategory_id={self.parentcategory_id})>"
 
+
+class CategoryDB(Base):
+    __tablename__ = "category"  # Table name in the database
+
+    category_id = Column(Integer, primary_key=True, autoincrement=True)
+    parentcategory_id = Column(Integer, ForeignKey("category.category_id", ondelete="SET NULL"), nullable=True)
+    category_name = Column(String(100), nullable=False)
+
+    # Add extend_existing=True to avoid redefinition errors
+    __table_args__ = {"extend_existing": True}
+
+    # Relationship to reference parent and children categories
+    parent = relationship("CategoryDB", remote_side=[category_id], backref="children")
+
+    def __repr__(self):
+        return f"<CategoryDB(category_id={self.category_id}, category_name={self.category_name}, parentcategory_id={self.parentcategory_id})>"
+    
+
 # Pydantic Model for creating a product
 class ProductCreate(BaseModel):
     name: str = Field(..., description="Product name")
