@@ -78,6 +78,7 @@ class Product(Base):
     quantity = Column(Integer, nullable=False, default=0)
     warranty_status = Column(Integer)
     distributor = Column(String(100))
+    price = Column(DECIMAL(10, 2), nullable=False, default=0.0)
 
 # Orders Table
 class Order(Base):
