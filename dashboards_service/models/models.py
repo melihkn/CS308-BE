@@ -72,13 +72,14 @@ class Product(Base):
     model = Column(String(50), nullable=False)
     description = Column(Text)
     category_id = Column(Integer, ForeignKey('category.category_id'))
-    pm_id = Column(CHAR(36), ForeignKey('product_managers.pm_id'))
-    sm_id = Column(CHAR(36), ForeignKey('sales_managers.sm_id'))
+    item_sold = Column(Integer, nullable=False, default=0)
+    price = Column(DECIMAL(10, 2), nullable=False)
+    cost = Column(DECIMAL(10, 2), nullable=False)
     serial_number = Column(String(100), unique=True, nullable=False)
     quantity = Column(Integer, nullable=False, default=0)
     warranty_status = Column(Integer)
     distributor = Column(String(100))
-    price = Column(DECIMAL(10, 2), nullable=False, default=0.0)
+    image_url = Column(String(255))
 
 # Orders Table
 class Order(Base):
