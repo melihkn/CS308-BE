@@ -20,12 +20,12 @@ def verify_pm_role(token: str = Depends(oauth2_scheme), db: Session = Depends(ge
         print(token)
         
         # Extract user role from token
-        # role: str = payload.get("role")
-        # if role != "product_manager":
-        #     raise HTTPException(
-        #         status_code=status.HTTP_403_FORBIDDEN,
-        #         detail="Access forbidden: Product manager role required"
-        #     )
+        role: str = payload.get("role")
+        if role != "product_manager":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access forbidden: Product manager role required"
+            )
 
         email : str = payload.get("sub")
         user = db.query(Customer).filter(Customer.email == email).first()
