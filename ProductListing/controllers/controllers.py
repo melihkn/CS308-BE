@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Path, status
+from fastapi import APIRouter, Depends, HTTPException, Path, status, Request
 import uuid
 from sqlalchemy.orm import Session
 from typing import List
@@ -12,6 +12,36 @@ router = APIRouter(prefix="/products", tags=["Products"])
 async def get_all_products(db: Session = Depends(get_db)):
     service = ProductService(db)
     return service.get_all_products()
+
+
+@router.get("/sorted-by-price", response_model=List[Product])
+async def get_products_sorted_by_price(
+    order: str = "asc",  # Default is ascending
+    db: Session = Depends(get_db)
+):
+    """
+    Get products sorted by price.
+    
+    :param order: Sorting order, "asc" or "desc".
+    """
+    service = ProductService(db)
+    
+    if order not in ["asc", "desc"]:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid order parameter. Use 'asc' for ascending or 'desc' for descending."
+        )
+    
+    return service.get_products_sorted_by_price(order)
+
+
+
+@router.get("/popular", response_model=List[Product])
+def get_products_sorted_by_popularity(db: Session = Depends(get_db)):
+    service = ProductService(db)
+    popular_products = service.get_products_sorted_by_popularity()
+    return popular_products
+
 
 @router.get("/{product_id}", response_model=Product)
 async def get_product(product_id: str = Path(..., regex=r"^[a-fA-F0-9-]{36}$"), db: Session = Depends(get_db)):
@@ -57,6 +87,8 @@ async def update_product(
         raise HTTPException(status_code=404, detail="Product not found")
     return product
 
+
+
 @router.delete("/{product_id}", status_code=204)
 def delete_product(product_id: uuid.UUID, db: Session = Depends(get_db)):
     service = ProductService(db)
@@ -64,3 +96,20 @@ def delete_product(product_id: uuid.UUID, db: Session = Depends(get_db)):
     if not success:
         raise HTTPException(status_code=404, detail="Product not found")
     return None
+
+
+
+@router.post("/search")
+async def search_products(request: Request, db: Session = Depends(get_db)):
+    """
+    Search products based on the input query from the user.
+    """
+    data = await request.json()
+    query = data.get("query", "").strip()  # Get the search query from the request body
+
+    if not query:
+        raise HTTPException(status_code=400, detail="Search query cannot be empty.")
+
+    service = ProductService(db)
+    return service.search_product_by_name_description(query)
+    # Query the database for matching products

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Text, Integer, ForeignKey, CHAR, Float, DateTime
+from sqlalchemy import Column, String, Text, Integer, ForeignKey, CHAR, Float, DateTime, DECIMAL
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
 from pydantic import BaseModel, Field
@@ -19,11 +19,12 @@ class ProductDB(Base):
     category_id = Column(Integer, ForeignKey('category.category_id', ondelete="SET NULL"), nullable=True)
     serial_number = Column(String(100), unique=True, nullable=False)
     quantity = Column(Integer, nullable=False, default=0)
-    quantity_sold = Column(Integer, nullable=False, default=0)  # Track total quantity sold
+    item_sold = Column(Integer, nullable=False, default=0)  # Track total quantity sold
     warranty_status = Column(Integer, nullable=True)
     distributor = Column(String(100), nullable=True) 
     image_url = Column(String(255), nullable=True)
-
+    price = Column(DECIMAL, nullable=False)  
+    cost = Column(DECIMAL, nullable=False)   
     # Relationship to reviews
     reviews = relationship("ReviewDB", back_populates="product")
 
@@ -60,10 +61,13 @@ class Product(BaseModel):
     model: str
     description: Optional[str] = None
     quantity: int
-    quantity_sold: int
     warranty_status: Optional[int] = None
     distributor: Optional[str] = None
     image_url: Optional[str] = None
+    item_sold: int  
+    price: float 
+    cost: float  
+    category_id: Optional[int] = None
 
     class Config:
         orm_mode = True
@@ -86,13 +90,14 @@ class ProductCreate(BaseModel):
     model: str = Field(..., description="Product model")
     description: Optional[str] = Field(None, description="Product description")
     category_id: Optional[int] = None
-    pm_id: Optional[str] = None
-    sm_id: Optional[str] = None
     serial_number: str
     quantity: int = Field(..., ge=0, description="Available quantity")
     warranty_status: Optional[int] = None
     distributor: Optional[str] = None
     image_url: Optional[str] = None
+    item_sold: int = Field(0, description="Total items sold")  # Default 0
+    price: float = Field(..., description="Selling price of the product")
+    cost: float = Field(..., description="Cost price of the product")
 
 # Pydantic Model for updating a product
 class ProductUpdate(BaseModel):
@@ -100,11 +105,12 @@ class ProductUpdate(BaseModel):
     model: Optional[str] = None
     description: Optional[str] = None
     category_id: Optional[int] = None
-    pm_id: Optional[str] = None
-    sm_id: Optional[str] = None
     serial_number: Optional[str] = None
     quantity: Optional[int] = None
     warranty_status: Optional[int] = None
     distributor: Optional[str] = None
     image_url: Optional[str] = None
+    item_sold: Optional[int] = None  # Allow updates
+    price: Optional[float] = None  # Allow updates
+    cost: Optional[float] = None  # Allow updates
 
