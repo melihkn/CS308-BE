@@ -65,9 +65,10 @@ async def read_product(product_id: str = Path(..., regex=r"^[a-fA-F0-9-]{36}$"),
     return product
 
 @router.put("/{product_id}", response_model=ProductResponse, dependencies=[Depends(verify_pm_role)])
-def update_product(product_id: int, product: ProductCreate, db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    
-    db_product = products.update_products(db, product_id, product)
+def update_product(product: ProductCreate, product_id: str = Path(..., regex=r"^[a-fA-F0-9-]{36}$"), db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
+    print("deneme")
+    db_product = products.update_product(db, product_id, product)
+    print("Update")
     
     if db_product is None:
         raise HTTPException(status_code=404, detail="Product not found")
@@ -75,21 +76,21 @@ def update_product(product_id: int, product: ProductCreate, db: Session = Depend
     return db_product
 
 @router.delete("/{product_id}", dependencies=[Depends(verify_pm_role)])
-def delete_product(product_id: int, db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
+def delete_product( db: Session = Depends(get_db), product_id: str = Path(..., regex=r"^[a-fA-F0-9-]{36}$"), token: str = Depends(oauth2_scheme)):
     db_product = products.delete_products(db, product_id)
     if db_product is None:
         raise HTTPException(status_code=404, detail="Product not found")
     return {"detail": "Product deleted"}
 
 @router.put("/{product_id}/{quantity}", response_model=ProductResponse, dependencies=[Depends(verify_pm_role)])
-def update_product_quantity(product_id: int, quantity: int, db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
+def update_product_quantity(quantity: int, db: Session = Depends(get_db), product_id: str = Path(..., regex=r"^[a-fA-F0-9-]{36}$"), token: str = Depends(oauth2_scheme)):
     product = products.update_product_quantity(db, product_id, quantity)
     if product is None:
         raise HTTPException(status_code=404, detail="Product not found")
     return product
 
 @router.get("/category/{category_id}", response_model=List[ProductResponse], dependencies=[Depends(verify_pm_role)])
-def get_products_by_category(category_id: str, db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
+def get_products_by_category(db: Session = Depends(get_db), category_id: str = Path(..., regex=r"^[a-fA-F0-9-]{36}$"),  token: str = Depends(oauth2_scheme)):
     productsList = products.get_products_by_category_id(db, category_id)
     if not productsList:
         raise HTTPException(status_code=404, detail="No products found")

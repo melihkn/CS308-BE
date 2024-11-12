@@ -30,3 +30,6 @@ def update_review_status(db: Session, review_id: str, reviewApprovalUpdate: Revi
     db.commit()
     db.refresh(review)
     return review
+
+def get_reviews_(db : Session):
+    return db.query(Review).all()
