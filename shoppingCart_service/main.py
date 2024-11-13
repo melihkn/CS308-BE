@@ -41,8 +41,6 @@ app.include_router(product_router)
 # Run the application with Uvicorn on port 8001
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app:app", host="127.0.0.1", port=8001, reload=True)
+    uvicorn.run("main:app", host="127.0.0.1", port=8001, reload=True)
 
 # to run this: uvicorn main:app --reload --port 8001
-
-# 

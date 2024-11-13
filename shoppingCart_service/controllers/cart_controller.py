@@ -38,15 +38,6 @@ async def merge_cart(items: List[CartItem], customer_id: str, db: Session = Depe
     Merge a session-based cart with the persistent cart after user login.
     """
     return CartService.merge_session_cart_with_persistent_cart(items, customer_id, db)
-'''
-@router.delete("/cart/remove")
-async def remove_from_cart(product_id: str, customer_id: str, db: Session = Depends(get_db)):
-    """
-    Remove an item from the user's persistent cart in the database.
-    """
-    return CartService.remove_item_from_cart(product_id, customer_id, db)
-'''
-
 
 @router.patch("/cart/increase_quantity")
 async def increase_item_quantity(payload: CartAdjustment, db: Session = Depends(get_db)):

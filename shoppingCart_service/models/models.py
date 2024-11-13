@@ -36,7 +36,6 @@ class ShoppingCartItem(Base):
 
     cart = relationship("ShoppingCart", back_populates="items") # many-to-one relationship
 
-
 # User types
 class Customer(Base):
     __tablename__ = "customers"

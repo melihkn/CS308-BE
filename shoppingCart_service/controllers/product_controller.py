@@ -74,3 +74,5 @@ async def get_product_inventory_status(product_id: str, db: Session = Depends(ge
         raise e  # Pass through HTTPException with custom status and detail
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
