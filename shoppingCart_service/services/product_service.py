@@ -2,6 +2,8 @@ from sqlalchemy.orm import Session
 from models.models import Product 
 from fastapi import HTTPException
 
+
+# This service is for in shopping card FE, to get the product details, update the quantity of the product, get all products, increment the number of items sold for a product, and check if a product is in stock.
 class ProductService:
     
     @staticmethod
