@@ -8,6 +8,7 @@ from controllers.categoryControllers import router as category_router
 from controllers.discountControllers import router as dashboard_router
 from controllers.orderControllers import router as order_router
 from controllers.salesManagerProductController import router as product_router
+from controllers.customerControllers import router as customer_router
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -21,6 +22,7 @@ app = FastAPI(
 app.include_router(dashboard_router, prefix="/SalesManager")
 app.include_router(order_router, prefix="/SalesManager")
 app.include_router(product_router, prefix= "/SalesManager")
+app.include_router(customer_router, prefix="/SalesManager")
 # Include Routers
 app.include_router(product_manager_controller, prefix="/ProductManager")
 app.include_router(review_controller, prefix="/ProductManager")
