@@ -6,7 +6,6 @@ from fastapi import Path
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime
 from sqlalchemy import func, desc, asc, text
-from fuzzywuzzy import fuzz
 
 
 class ProductService:
