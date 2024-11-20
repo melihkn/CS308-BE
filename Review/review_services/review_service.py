@@ -57,3 +57,15 @@ def get_all_reviews_for_certain_product(db: Session, requested_review: Review_Re
     """
     reviews = db.query(Review).filter(Review.product_id == requested_review.product_id).all()
     return reviews
+
+
+def calculate_average_rating(db: Session, average_of_ratings: Review_Response):
+    reviews = db.query(Review).filter(Review.product_id == average_of_ratings.product_id).all()
+    if len(reviews) == 0:
+        return 0
+    else:
+        avg = 0
+        for i in reviews:
+            avg += i.rating
+        avg = avg/len(reviews)
+        return avg
