@@ -19,7 +19,7 @@ class OrderCreate(BaseModel):
     customer_id: str                       # ID of the customer placing the order
     total_price: Decimal                   # Total price of the order
     order_date: datetime = Field(default_factory=datetime.utcnow)  # Order date defaults to current time
-    order_status: str                      # Status of the order (e.g., "pending", "completed")
+    order_status: int                      # Status of the order (e.g., "pending", "completed")
     payment_status: str                    # Payment status (e.g., "paid", "unpaid")
     invoice_link: Optional[str] = None     # Optional link to an invoice
 
@@ -34,9 +34,14 @@ class OrderItemCreate(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
+class OrderRead(OrderCreate):
+    order_id: str
+
+class OrderItemRead(OrderItemCreate):
+    order_item_id: str
 
 
-@router.get("/orders", response_model=List[OrderCreate])
+@router.get("/orders", response_model=List[OrderRead])
 def read_orders(db: Session = Depends(get_db)):
     return get_orders(db)
 
@@ -45,7 +50,7 @@ def create_order(order: OrderCreate, db: Session = Depends(get_db)):
     return create_order_service(db, order)
 
 
-@router.get("/orderItems", response_model = List[OrderItemCreate])
+@router.get("/orderItems", response_model = List[OrderItemRead])
 def read_orderItems(db: Session = Depends(get_db)):
     return get_orderItems(db)
 
