@@ -99,6 +99,7 @@ async def update_product(
     service = ProductService(db)
     
     
+    
     product = service.update_product(product_id, product_data)
     
     if not product:
@@ -125,7 +126,7 @@ async def search_products(request: Request, db: Session = Depends(get_db)):
     data = await request.json()
     query = data.get("query", "").strip()  # Get the search query from the request body
 
-    if not query:
+    if not query: #If query does not exists
         raise HTTPException(status_code=400, detail="Search query cannot be empty.")
 
     service = ProductService(db)
