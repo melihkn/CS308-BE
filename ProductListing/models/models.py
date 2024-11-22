@@ -132,3 +132,6 @@ class ProductUpdate(BaseModel):
     price: Optional[float] = None  # Allow updates
     cost: Optional[float] = None  # Allow updates
 
+
+class user2(BaseModel):
+    username: Optional[str] = None
