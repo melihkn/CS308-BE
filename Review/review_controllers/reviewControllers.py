@@ -31,14 +31,14 @@ async def add_review(submited_review: Review_Response, db: Session = Depends(get
     #checks if the user of the token ordered the product whose id's is given as parameter
     check = check_user_orders(db, token, submited_review.product_id)
     if(check):
-        review = create_review(db,token,submited_review)
+        return create_review(db,token,submited_review)
     else:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You have not ordered that product, so you cannot review it"
         )
     
-@router.get("/get_reviews")
+@router.get("/get_reviews", response_model = List[Review_Response])
 async def get_reviews(requested_reviews: Review_Response,db: Session = Depends(get_db)):
     reviews = get_all_reviews_for_certain_product(db,requested_reviews)
     return reviews

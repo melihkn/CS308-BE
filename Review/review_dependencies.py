@@ -36,7 +36,7 @@ def verify_user_role(token: str = Depends(oauth2_scheme), db: Session = Depends(
         if user is None:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access forbidden: Product manager role required"
+                detail="Access forbidden: This customer does not exist"
             )
         
         # Optionally, you can add additional checks here (e.g., user status or permissions)
