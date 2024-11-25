@@ -5,12 +5,11 @@ from uuid import uuid4
 
 def create_review(db: Session, reviewCreate: ReviewCreate, customer_id: str):
     review = Review(
-        review_id = str(uuid4()),
-        customer_id = customer_id,
+        review_id = str(uuid4()),  
         product_id = reviewCreate.product_id,
         rating = reviewCreate.rating,
         comment = reviewCreate.comment,
-        approval_status = "pending"
+        approval_status = "PENDING"
     )
     db.add(review)
     db.commit()
