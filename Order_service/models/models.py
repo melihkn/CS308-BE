@@ -1,107 +1,137 @@
-from sqlalchemy import Column, String, DECIMAL, DateTime, ForeignKey, Integer
-from sqlalchemy.orm import relationship
-from pydantic import BaseModel
-from typing import List
+from sqlalchemy import (
+    create_engine, Column, String, Integer, Float, Text, Boolean,
+    ForeignKey, DateTime, DECIMAL, UniqueConstraint
+)
+from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy.dialects.mysql import CHAR, VARCHAR, TEXT
+from uuid import uuid4
 from datetime import datetime
-from utils.db_utils import Base
 
-# SQLAlchemy Models
+Base = declarative_base()
 
+# Customers Table
 class Customer(Base):
-    __tablename__ = "customers"
+    __tablename__ = 'customers'
+    user_id = Column(CHAR(36), primary_key=True, nullable=False)
+    name = Column(VARCHAR(50), nullable=False)
+    middlename = Column(VARCHAR(50))
+    surname = Column(VARCHAR(50), nullable=False)
+    email = Column(VARCHAR(100), nullable=False, unique=True)
+    password = Column(VARCHAR(255), nullable=False)
+    phone_number = Column(VARCHAR(20))
+    addresses = relationship("Address", back_populates="customer", cascade="all, delete-orphan")
+    orders = relationship("Order", back_populates="customer", cascade="all, delete-orphan")
+    reviews = relationship("Review", back_populates="customer", cascade="all, delete-orphan")
+    wishlists = relationship("Wishlist", back_populates="customer", cascade="all, delete-orphan")
+    shopping_cart = relationship("ShoppingCart", back_populates="customer", cascade="all, delete-orphan")
 
-    user_id = Column(String(36), primary_key=True)
-    name = Column(String(255), nullable=False)
-    email = Column(String(255), unique=True, nullable=False)
-
-    orders = relationship("Order", back_populates="customer")
+# Category Table
+class Category(Base):
+    __tablename__ = 'category'
+    category_id = Column(Integer, primary_key=True, autoincrement=True)
+    parentcategory_id = Column(Integer, ForeignKey('category.category_id', ondelete="SET NULL"))
+    category_name = Column(VARCHAR(100), nullable=False)
+    parent_category = relationship("Category", remote_side=[category_id], back_populates="subcategories")
+    subcategories = relationship("Category", back_populates="parent_category", cascade="all, delete-orphan")
 
 class Product(Base):
     __tablename__ = 'products'
-
-    # columns of the table
-    product_id = Column(CHAR(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    product_id = Column(CHAR(36), primary_key=True, nullable=False, default=lambda: str(uuid4()))
     name = Column(VARCHAR(100), nullable=False)
     model = Column(VARCHAR(50), nullable=False)
-    description = Column(Text, nullable=True)
-    category_id = Column(Integer, ForeignKey('category.category_id', ondelete='SET NULL'), nullable=True)
-    serial_number = Column(VARCHAR(100), unique=True, nullable=False)
+    description = Column(TEXT)
+    category_id = Column(Integer, ForeignKey('category.category_id', ondelete="SET NULL"))
+    serial_number = Column(VARCHAR(100), nullable=False, unique=True)
     quantity = Column(Integer, nullable=False, default=0)
-    warranty_status = Column(Integer, nullable=True)
-    distributor = Column(VARCHAR(100), nullable=True)
-    image_url = Column(VARCHAR(255), nullable=True)
+    warranty_status = Column(Integer)
+    distributor = Column(VARCHAR(100))
+    image_url = Column(VARCHAR(255))
     price = Column(DECIMAL(10, 2), nullable=False, default=0.00)
     item_sold = Column(Integer, nullable=False, default=0)
-
-    # defining the relationship between the tables
-    order_items = relationship("OrderItem", back_populates="product")
-    
-
-    def __repr__(self):
-        return f"<Product(name={self.name}, model={self.model}, quantity={self.quantity})>"
+    order_items = relationship("OrderItem", back_populates="product", cascade="all, delete-orphan")
 
 
+# Address Table
+class Address(Base):
+    __tablename__ = 'addresses'
+    address_id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(CHAR(36), ForeignKey('customers.user_id', ondelete="CASCADE"))
+    street = Column(VARCHAR(255), nullable=False)
+    city = Column(VARCHAR(100), nullable=False)
+    state = Column(VARCHAR(100), nullable=False)
+    zip_code = Column(VARCHAR(20), nullable=False)
+    country = Column(VARCHAR(50), nullable=False)
+    customer = relationship("Customer", back_populates="addresses")
 
+# Orders Table
 class Order(Base):
-    __tablename__ = "orders"
-
-    order_id = Column(String(36), primary_key=True, default=lambda: str(uuid4()))
-    customer_id = Column(String(36), ForeignKey("customers.user_id"), nullable=True)
+    __tablename__ = 'orders'
+    order_id = Column(CHAR(36), primary_key=True, default=lambda: str(uuid4()))
+    customer_id = Column(CHAR(36), ForeignKey('customers.user_id', ondelete="SET NULL"))
     total_price = Column(DECIMAL(10, 2), nullable=False)
-    order_date = Column(DateTime, default=datetime.utcnow, nullable=False)
-    order_status = Column(String(50), nullable=False)  # String-based statuses
-    payment_status = Column(String(50), nullable=False)
-    invoice_link = Column(String(255), nullable=True)
+    order_date = Column(DateTime, nullable=False, default=datetime.utcnow)
+    payment_status = Column(VARCHAR(50), nullable=False)
+    invoice_link = Column(VARCHAR(255)) # URL to the invoice -> can be null 
+    order_status = Column(Integer, nullable=False)
+    customer = relationship("Customer", back_populates="orders")
+    order_items = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
 
-    # Relationships
-    customer = relationship("Customer", back_populates="orders")  # Define relationship to Customer
-    items = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
-    refunds = relationship("Refund", back_populates="order", cascade="all, delete-orphan")
-
-
+# Order Items Table
 class OrderItem(Base):
-    __tablename__ = "order_items"
-
-    order_item_id = Column(String(36), primary_key=True, default=lambda: str(uuid4()))
-    product_id = Column(String(36), ForeignKey("products.product_id"), nullable=False)
-    order_id = Column(String(36), ForeignKey("orders.order_id"), nullable=False)
-    price_at_purchase = Column(DECIMAL(10, 2), nullable=False)
+    __tablename__ = 'order_items'
+    order_item_id = Column(CHAR(36), primary_key=True, default=lambda: str(uuid4()))
+    order_id = Column(CHAR(36), ForeignKey('orders.order_id', ondelete="CASCADE"))
+    product_id = Column(CHAR(36), ForeignKey('products.product_id', ondelete="CASCADE"))
     quantity = Column(Integer, nullable=False, default=1)
-
-    # Relationships
-    order = relationship("Order", back_populates="items")
+    price_at_purchase = Column(DECIMAL(10, 2), nullable=False)
+    order = relationship("Order", back_populates="order_items")
     product = relationship("Product", back_populates="order_items")
 
+# Wishlist Table
+class Wishlist(Base):
+    __tablename__ = 'wishlists'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(CHAR(36), ForeignKey('customers.user_id', ondelete="CASCADE"))
+    product_id = Column(CHAR(36), ForeignKey('products.product_id', ondelete="CASCADE"))
+    customer = relationship("Customer", back_populates="wishlists")
 
+# Shopping Cart Table
+class ShoppingCart(Base):
+    __tablename__ = 'shopping_cart'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(CHAR(36), ForeignKey('customers.user_id', ondelete="CASCADE"))
+    product_id = Column(CHAR(36), ForeignKey('products.product_id', ondelete="CASCADE"))
+    quantity = Column(Integer, nullable=False)
+    customer = relationship("Customer", back_populates="shopping_cart")
+
+# Review Table
+class Review(Base):
+    __tablename__ = 'reviews'
+    review_id = Column(CHAR(36), primary_key=True, default=lambda: str(uuid4()))
+    user_id = Column(CHAR(36), ForeignKey('customers.user_id', ondelete="CASCADE"))
+    product_id = Column(CHAR(36), ForeignKey('products.product_id', ondelete="CASCADE"))
+    rating = Column(Integer, nullable=False)
+    comment = Column(TEXT)
+    customer = relationship("Customer", back_populates="reviews")
+
+
+""" To be used later. 
+# Refund Table
 class Refund(Base):
-    __tablename__ = "refunds"
+    __tablename__ = 'refunds'
+    refund_id = Column(CHAR(36), primary_key=True, nullable=False)
+    order_id = Column(CHAR(36), ForeignKey('orders.order_id'))
+    reason = Column(TEXT, nullable=False)
+    status = Column(VARCHAR(50), nullable=False)
+    order = relationship("Order", back_populates="refunds")
+"""
 
-    refund_id = Column(String(36), primary_key=True, default=lambda: str(uuid4()))
-    order_id = Column(String(36), ForeignKey("orders.order_id"), nullable=False)
-    order_item_id = Column(String(36), ForeignKey("order_items.order_item_id"), nullable=False)
-    request_date = Column(DateTime, default=datetime.utcnow, nullable=False)
-    status = Column(String(50), nullable=False)  # e.g., 'pending', 'approved', 'rejected'
-    refund_amount = Column(DECIMAL(10, 2), nullable=False)
-    sm_id = Column(String(36), ForeignKey("sales_managers.sm_id"), nullable=True)
+# Pydantic models
+from pydantic import BaseModel, Field
+from typing import List, Optional
 
-    # Relationships
-    order = relationship("Order", back_populates="refunds")  # Links to Order
-    order_item = relationship("OrderItem", back_populates="refunds")  # Links to OrderItem
-    sales_manager = relationship("SalesManager", back_populates="refunds")  # Links to SalesManager
-
-
-# Pydantic Models
-
-class OrderStatusUpdateSchema(BaseModel):
-    status: int
-
-class RefundResponseSchema(BaseModel):
-    message: str
-    refund_amount: float
-    refunded_product: str
-    updated_stock: int
-
-class OrderItemSchema(BaseModel):
+# Order Models
+class OrderItemCreateSchema(BaseModel):
     product_id: str
     quantity: int
     price_at_purchase: float
@@ -109,18 +139,30 @@ class OrderItemSchema(BaseModel):
 
 class OrderCreateSchema(BaseModel):
     customer_id: str
-    items: List[OrderItemSchema]
     total_price: float
+    order_date: str
+    payment_status: str
+    invoice_link: Optional[str]
+    order_status: int
+    items: List[OrderItemCreateSchema]
 
+class OrderItemResponseSchema(BaseModel):
+    product_id: str
+    quantity: int
+    price: float
 
 class OrderResponseSchema(BaseModel):
     order_id: str
     customer_id: str
     total_price: float
-    order_date: datetime
-    order_status: str
+    order_date: str
     payment_status: str
-    items: List[OrderItemSchema]
+    invoice_link: Optional[str]
+    order_status: int
+    items: List[OrderItemResponseSchema]
 
-    class Config:
-        orm_mode = True
+
+class OrderStatusUpdateSchema(BaseModel):
+    status: int
+
+
