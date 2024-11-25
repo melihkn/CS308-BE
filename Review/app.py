@@ -1,8 +1,8 @@
 # app/main.py
 from fastapi import FastAPI
 import uvicorn
-from controllers.reviewControllers import router as review_controller
-from dbContext import engine, Base
+from review_controllers.reviewControllers import router as review_controller
+from dbContext_Review import engine, Base
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(

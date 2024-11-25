@@ -31,7 +31,7 @@ async def get_reviews(db: Session = Depends(get_db), token: str = Depends(oauth2
 #dependencies=Depends(verify_pm_role)
 @router.get("/pending", response_model=List[ReviewResponse], dependencies=[Depends(verify_pm_role)])
 async def get_pending_reviews(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    review = await get_reviews_by_status(db, "pending")
+    review = await get_reviews_by_status(db, "PENDING")
     return review
 
 #dependencies=Depends(verify_pm_role) , token: str = Depends(oauth2_scheme)
