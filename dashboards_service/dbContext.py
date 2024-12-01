@@ -3,7 +3,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import declarative_base
 
 # Replace with your actual MySQL connection string
-DATABASE_URL = "mysql+pymysql://root:MelihKN_53@localhost:3306/Myvet_db"
+DATABASE_URL = "mysql+pymysql://root:orkun2003@127.0.0.1:3306/myvet_db"
 
 # Create an engine
 engine = create_engine(DATABASE_URL)
