@@ -31,7 +31,7 @@ async def get_reviews(db: Session = Depends(get_db), token: str = Depends(oauth2
 #dependencies=Depends(verify_pm_role)
 @router.get("/pending", response_model=List[ReviewResponse], dependencies=[Depends(verify_pm_role)])
 async def get_pending_reviews(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
-    review = await get_reviews_by_status(db, "pending")
+    review = await get_reviews_by_status(db, "PENDING")
     return review
 
 #dependencies=Depends(verify_pm_role) , token: str = Depends(oauth2_scheme)
@@ -44,3 +44,10 @@ async def update_review_status_(reviewApprovalUpdate: ReviewApprovalUpdate, revi
     review_ = update_review_status(db, review_id, reviewApprovalUpdate)
 
     return {"approval_status": review_.approval_status}
+
+@router.post("/{review_id}", response_model=ReviewResponse, dependencies=[Depends(verify_pm_role)])
+async def delete_review(review_id: str = Path(..., regex=r"^[a-fA-F0-9-]{36}$"), db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
+    payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
+    pm_id = payload.get("sub")
+    review = delete_review(db, review_id, pm_id)
+    return review

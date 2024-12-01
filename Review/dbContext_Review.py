@@ -1,25 +1,22 @@
-
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import declarative_base
 
-# Assuming you have a database URL
+# Replace with your actual MySQL connection string
+DATABASE_URL = "mysql+pymysql://root:MelihKN_53@127.0.0.1:3306/Myvet_db"
 
-DATABASE_URL = "mysql+pymysql://root:TunahanTunahan987.%2C@127.0.0.1:3306/CS308_Project"
-
-
-# Create a new engine instance
+# Create an engine
 engine = create_engine(DATABASE_URL)
 
 # Create a configured "Session" class
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# Dependency to get a session
+Base = declarative_base()
+
+# Dependency to get the session
 def get_db():
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
-
-
-
