@@ -189,3 +189,69 @@ class OrderService:
         order.order_status = new_status
         db.commit()
         return ORDER_STATUS_MAP[new_status]
+
+    @staticmethod
+    def process_payment(payment_data: dict, db: Session):
+        """
+        Process payment and create an order.
+        
+        Input:
+        - payment_data: Dictionary containing payment and order details
+        - db: SQLAlchemy Session object
+        
+        Output:
+        - Created Order object
+        """
+        # Validate input data
+        if not all(key in payment_data for key in ['userId', 'deliveryAddress', 'paymentDetails', 'cartItems']):
+            raise ValueError("Missing required payment information")
+        
+        # Calculate total price
+        total_price = 0
+        order_items = []
+        
+        # Validate and prepare order items
+        for item in payment_data['cartItems']:
+            product = db.query(Product).filter_by(product_id=item['productId']).first()
+            if not product:
+                raise ValueError(f"Product {item['productId']} not found")
+            
+            # Check stock availability
+            if product.quantity < item['quantity']:
+                raise ValueError(f"Insufficient stock for product {item['productId']}")
+            
+            # Calculate price for this item
+            item_total = product.price * item['quantity']
+            total_price += item_total
+            
+            order_items.append(OrderItemCreateSchema(
+                product_id=item['productId'],
+                quantity=item['quantity'],
+                price_at_purchase=float(product.price)
+            ))
+        
+        # Validate payment details (basic validation)
+        payment_details = payment_data['paymentDetails']
+        if not (payment_details.get('cardNumber') and 
+                payment_details.get('cvc') and 
+                payment_details.get('expiryMonth') and 
+                payment_details.get('expiryYear')):
+            raise ValueError("Invalid payment details")
+        
+        # Simulate payment processing 
+        # In a real-world scenario, you would integrate with a payment gateway here
+        # For this example, we'll just validate the payment details
+        
+        # Prepare order creation data
+        order_create_data = OrderCreateSchema(
+            customer_id=payment_data['userId'],
+            total_price=total_price,
+            order_date=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            payment_status="paid",
+            invoice_link=None,  # You could generate an invoice link here if needed
+            order_status=0,  # Pending
+            items=order_items
+        )
+        
+        # Create the order
+        return OrderService.create_order(order_create_data, db)

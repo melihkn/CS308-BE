@@ -9,6 +9,25 @@ from models.models import CartAdjustment, CartItem # these are the pydantic mod
 
 router = APIRouter()
 
+"""
+example input:
+get request: /cart/c1
+
+example output:
+{
+    "customer_id": "c1",
+    "cart_items": [
+        {
+            "product_id": "p1",
+            "quantity": 2
+        },
+        {
+            "product_id": "p2",
+            "quantity": 1
+        }
+    ]
+}
+"""
 @router.get("/cart/{customer_id}")
 async def get_cart(customer_id: str, db: Session = Depends(get_db)):
     """
@@ -16,6 +35,24 @@ async def get_cart(customer_id: str, db: Session = Depends(get_db)):
     """
     return CartService.get_cart(customer_id, db)
 
+"""
+example input:
+{
+    "product_id": "p1",
+    "quantity": 2
+}
+
+example output:
+{
+    "message": "Item added to persistent cart.",
+    "cart_items": [
+        {
+            "product_id": "p1",
+            "quantity": 2
+        }
+    ]
+}
+"""
 @router.post("/cart/add")
 async def add_to_cart(cart_item: CartItem, customer_id: str = None, db: Session = Depends(get_db)):
     """
@@ -38,16 +75,19 @@ async def merge_cart(items: List[CartItem], customer_id: str, db: Session = Depe
     Merge a session-based cart with the persistent cart after user login.
     """
     return CartService.merge_session_cart_with_persistent_cart(items, customer_id, db)
-'''
-@router.delete("/cart/remove")
-async def remove_from_cart(product_id: str, customer_id: str, db: Session = Depends(get_db)):
-    """
-    Remove an item from the user's persistent cart in the database.
-    """
-    return CartService.remove_item_from_cart(product_id, customer_id, db)
-'''
 
+"""
+example input:
+{
+    "product_id": "p1",
+    "customer_id": "c1"
+}
 
+example output:
+{
+    "message": "Item quantity increased in the cart"
+}
+"""
 @router.patch("/cart/increase_quantity")
 async def increase_item_quantity(payload: CartAdjustment, db: Session = Depends(get_db)):
     """
@@ -61,6 +101,18 @@ async def increase_item_quantity(payload: CartAdjustment, db: Session = Depends(
     except Exception as e:
         raise HTTPException(status_code=500, detail="Could not increase item quantity in the cart.")
 
+"""
+example input:
+{
+    "product_id": "p1",
+    "customer_id": "c1"
+}
+
+example output:
+{
+    "message": "Item quantity decreased in the cart"
+}
+"""
 @router.patch("/cart/decrease_quantity")
 async def decrease_item_quantity(payload: CartAdjustment, db: Session = Depends(get_db)):
     """
@@ -74,6 +126,18 @@ async def decrease_item_quantity(payload: CartAdjustment, db: Session = Depends(
     except Exception as e:
         raise HTTPException(status_code=500, detail="Could not decrease item quantity in the cart.")
 
+"""
+example input:
+{
+    "product_id": "p1",
+    "customer_id": "c1"
+}
+
+example output:
+{
+    "message": "Item removed from the cart"
+}
+"""
 @router.delete("/cart/remove")
 async def remove_from_cart(payload: CartAdjustment, db: Session = Depends(get_db)):
     """
