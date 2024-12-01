@@ -32,3 +32,11 @@ def update_review_status(db: Session, review_id: str, reviewApprovalUpdate: Revi
 
 def get_reviews_(db : Session):
     return db.query(Review).all()
+
+def delete_review(db: Session, review_id: str, pm_id: str):
+    review = db.query(Review).filter(Review.review_id == review_id).first()
+    if review is None:
+        return None
+    db.delete(review)
+    db.commit()
+    return review
