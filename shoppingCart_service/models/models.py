@@ -19,7 +19,7 @@ from datetime import datetime
 
 Base = declarative_base()
 
-
+"""
 # Customer Table
 class Customer(Base):
     __tablename__ = 'customers'
@@ -36,10 +36,28 @@ class Customer(Base):
     addresses = relationship("Address", back_populates="customer", cascade="all, delete-orphan")
     orders = relationship("Order", back_populates="customer")
     shopping_cart = relationship("ShoppingCart", back_populates="customer")
+"""
+class Customer(Base):
+    __tablename__ = 'customers'
+
+    user_id = Column(CHAR(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    name = Column(String(50), nullable=False)
+    middlename = Column(String(50), nullable=True)
+    surname = Column(String(50), nullable=False)
+    email = Column(String(100), unique=True, nullable=False)
+    password = Column(String(255), nullable=False)
+    phone_number = Column(String(20), nullable=True)
+
+    # Relationships
+    addresses = relationship("Address", back_populates="customer", cascade="all, delete-orphan")  # Fixed back_populates name
+    orders = relationship("Order", back_populates="customer")
+    shopping_cart = relationship("ShoppingCart", back_populates="customer")
 
 
 # Address Table
+"""
 class Address(Base):
+    
     __tablename__ = 'address'
 
     customer_adres_id = Column(CHAR(36), primary_key=True, default=lambda: str(uuid.uuid4()))
@@ -49,9 +67,24 @@ class Address(Base):
     state = Column(String(100), nullable=False)
     zip_code = Column(String(20), nullable=False)
     country = Column(String(50), nullable=False)
+    
 
     # Relationship with the Customer table
     customer = relationship("Customer", back_populates="addresses")
+    """
+    # Address Table
+class Address(Base):
+    __tablename__ = 'adres'
+
+    customer_adres_id = Column(CHAR(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    address = Column(Text, nullable=False)
+    type_ = Column(String(50), nullable=False)
+    name = Column(String(100), nullable=True)
+    customer_id = Column(CHAR(36), ForeignKey('customers.user_id', ondelete="CASCADE"))  # Fixed relationship with Customer
+
+    # Relationships
+    customer = relationship("Customer", back_populates="addresses")  # Fixed back_populates name
+    deliveries = relationship("Delivery", back_populates="address", cascade="all, delete-orphan")  # Added relationship with Delivery
 
 
 # Order Table
@@ -84,7 +117,7 @@ class OrderItem(Base):
     order = relationship("Order", back_populates="order_items")  # String-based reference
     product = relationship("Product", back_populates="order_items")
 
-
+"""
 # Delivery Table
 class Delivery(Base):
     __tablename__ = 'delivery'
@@ -96,6 +129,18 @@ class Delivery(Base):
 
     order = relationship("Order", back_populates="delivery")
     address = relationship("Address")
+"""
+class Delivery(Base):
+    __tablename__ = 'delivery'
+
+    delivery_id = Column(CHAR(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    order_id = Column(CHAR(36), ForeignKey('orders.order_id', ondelete="CASCADE"))
+    delivery_status = Column(String(50), nullable=False)
+    addres_id = Column(CHAR(36), ForeignKey('adres.customer_adres_id', ondelete="SET NULL"))  # Fixed table and column name
+
+    order = relationship("Order", back_populates="delivery")
+    address = relationship("Address", back_populates="deliveries")  # Fixed back_populates name
+
 
 class Product(Base):
     __tablename__ = 'products'
@@ -227,5 +272,4 @@ discount:
 
 delivery:
 'delivery', 'CREATE TABLE `delivery` (\n  `delivery_id` char(36) NOT NULL DEFAULT (uuid()),\n  `order_id` char(36) DEFAULT NULL,\n  `delivery_status` varchar(50) NOT NULL,\n  `addres_id` char(36) DEFAULT NULL,\n  PRIMARY KEY (`delivery_id`),\n  KEY `order_id` (`order_id`),\n  KEY `addres_id` (`addres_id`),\n  CONSTRAINT `delivery_ibfk_1` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE CASCADE,\n  CONSTRAINT `delivery_ibfk_2` FOREIGN KEY (`addres_id`) REFERENCES `adres` (`customer_adres_id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci'
-
 """

@@ -51,3 +51,6 @@ discount:
 
 delivery:
 'delivery', 'CREATE TABLE `delivery` (\n  `delivery_id` char(36) NOT NULL DEFAULT (uuid()),\n  `order_id` char(36) DEFAULT NULL,\n  `delivery_status` varchar(50) NOT NULL,\n  `addres_id` char(36) DEFAULT NULL,\n  PRIMARY KEY (`delivery_id`),\n  KEY `order_id` (`order_id`),\n  KEY `addres_id` (`addres_id`),\n  CONSTRAINT `delivery_ibfk_1` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE CASCADE,\n  CONSTRAINT `delivery_ibfk_2` FOREIGN KEY (`addres_id`) REFERENCES `adres` (`customer_adres_id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci'
+
+adres:
+'adres', 'CREATE TABLE `adres` (\n  `customer_adres_id` char(36) NOT NULL DEFAULT (uuid()),\n  `address` text NOT NULL,\n  `type` varchar(50) NOT NULL,\n  `name` varchar(100) DEFAULT NULL,\n  `customer_id` char(36) DEFAULT NULL,\n  PRIMARY KEY (`customer_adres_id`),\n  KEY `customer_id` (`customer_id`),\n  CONSTRAINT `adres_ibfk_1` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`user_id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci'

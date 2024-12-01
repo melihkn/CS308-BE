@@ -151,3 +151,16 @@ async def remove_from_cart(payload: CartAdjustment, db: Session = Depends(get_db
     except Exception as e:
         raise HTTPException(status_code=500, detail="Could not remove item from the cart.")
 
+
+@router.delete("/cart/clear")
+async def clear_cart(customer_id: str, db: Session = Depends(get_db)):
+    """
+    Clear the user's cart.
+    """
+    try:
+        result = CartService.clear_cart(customer_id, db)
+        return result
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Could not clear the cart.")
