@@ -5,12 +5,11 @@ from uuid import uuid4
 
 def create_review(db: Session, reviewCreate: ReviewCreate, customer_id: str):
     review = Review(
-        review_id = str(uuid4()),
-        customer_id = customer_id,
+        review_id = str(uuid4()),  
         product_id = reviewCreate.product_id,
         rating = reviewCreate.rating,
         comment = reviewCreate.comment,
-        approval_status = "pending"
+        approval_status = "PENDING"
     )
     db.add(review)
     db.commit()
@@ -29,4 +28,15 @@ def update_review_status(db: Session, review_id: str, reviewApprovalUpdate: Revi
         review.pm_id = pm_id
     db.commit()
     db.refresh(review)
+    return review
+
+def get_reviews_(db : Session):
+    return db.query(Review).all()
+
+def delete_review(db: Session, review_id: str, pm_id: str):
+    review = db.query(Review).filter(Review.review_id == review_id).first()
+    if review is None:
+        return None
+    db.delete(review)
+    db.commit()
     return review

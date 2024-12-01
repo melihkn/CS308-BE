@@ -1,0 +1,56 @@
+orders:
+'orders', 'CREATE TABLE `orders` (\n  `order_id` char(36) NOT NULL DEFAULT (uuid()),\n  `customer_id` char(36) DEFAULT NULL,\n  `total_price` decimal(10,2) NOT NULL,\n  `order_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `payment_status` varchar(50) NOT NULL,\n  `invoice_link` varchar(255) DEFAULT NULL,\n  `order_status` int NOT NULL,\n  PRIMARY KEY (`order_id`),\n  KEY `customer_id` (`customer_id`),\n  CONSTRAINT `orders_ibfk_1` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`user_id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci'
+
+
+order_items:
+'order_items', 'CREATE TABLE `order_items` (\n  `order_item_id` char(36) NOT NULL DEFAULT (uuid()),\n  `product_id` char(36) DEFAULT NULL,\n  `order_id` char(36) DEFAULT NULL,\n  `price_at_purchase` decimal(10,2) NOT NULL,\n  `quantity` int NOT NULL DEFAULT \'1\',\n  PRIMARY KEY (`order_item_id`),\n  KEY `product_id` (`product_id`),\n  KEY `order_id` (`order_id`),\n  CONSTRAINT `order_items_ibfk_1` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE CASCADE,\n  CONSTRAINT `order_items_ibfk_2` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci'
+
+products:
+'products', 'CREATE TABLE `products` (\n  `product_id` char(36) NOT NULL DEFAULT (uuid()),\n  `name` varchar(100) NOT NULL,\n  `model` varchar(50) NOT NULL,\n  `description` text,\n  `category_id` int DEFAULT NULL,\n  `serial_number` varchar(100) NOT NULL,\n  `quantity` int NOT NULL DEFAULT \'0\',\n  `warranty_status` int DEFAULT NULL,\n  `distributor` varchar(100) DEFAULT NULL,\n  `image_url` varchar(255) DEFAULT NULL,\n  `price` decimal(10,2) NOT NULL DEFAULT \'0.00\',\n  `item_sold` int NOT NULL DEFAULT \'0\',\n  PRIMARY KEY (`product_id`),\n  UNIQUE KEY `serial_number` (`serial_number`),\n  KEY `category_id` (`category_id`),\n  CONSTRAINT `products_ibfk_1` FOREIGN KEY (`category_id`) REFERENCES `category` (`category_id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci'
+
+customers:
+'customers', 'CREATE TABLE `customers` (\n  `user_id` char(36) NOT NULL DEFAULT (uuid()),\n  `name` varchar(50) NOT NULL,\n  `middlename` varchar(50) DEFAULT NULL,\n  `surname` varchar(50) NOT NULL,\n  `email` varchar(100) NOT NULL,\n  `password` varchar(255) NOT NULL,\n  `phone_number` varchar(20) DEFAULT NULL,\n  PRIMARY KEY (`user_id`),\n  UNIQUE KEY `email` (`email`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci'
+
+category: 
+'category', 'CREATE TABLE `category` (\n  `category_id` int NOT NULL AUTO_INCREMENT,\n  `parentcategory_id` int DEFAULT NULL,\n  `category_name` varchar(100) NOT NULL,\n  PRIMARY KEY (`category_id`),\n  KEY `fk_parentcategory` (`parentcategory_id`),\n  CONSTRAINT `fk_parentcategory` FOREIGN KEY (`parentcategory_id`) REFERENCES `category` (`category_id`) ON DELETE SET NULL\n) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci'
+
+refund:
+'refund', 'CREATE TABLE `refund` (\n  `refund_id` char(36) NOT NULL DEFAULT (uuid()),\n  `order_id` char(36) DEFAULT NULL,\n  `order_item_id` char(36) DEFAULT NULL,\n  `request_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `status` varchar(50) NOT NULL,\n  `refund_amount` decimal(10,2) NOT NULL,\n  `sm_id` char(36) DEFAULT NULL,\n  PRIMARY KEY (`refund_id`),\n  KEY `order_id` (`order_id`),\n  KEY `order_item_id` (`order_item_id`),\n  KEY `sm_id` (`sm_id`),\n  CONSTRAINT `refund_ibfk_1` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE CASCADE,\n  CONSTRAINT `refund_ibfk_2` FOREIGN KEY (`order_item_id`) REFERENCES `order_items` (`order_item_id`) ON DELETE CASCADE,\n  CONSTRAINT `refund_ibfk_3` FOREIGN KEY (`sm_id`) REFERENCES `sales_managers` (`sm_id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci'
+
+refunds:
+'refunds', 'CREATE TABLE `refunds` (\n  `refund_id` varchar(36) NOT NULL,\n  `order_id` varchar(36) NOT NULL,\n  `product_id` varchar(36) NOT NULL,\n  `refund_amount` decimal(10,2) NOT NULL,\n  `refund_date` datetime NOT NULL,\n  PRIMARY KEY (`refund_id`),\n  KEY `order_id` (`order_id`),\n  KEY `product_id` (`product_id`),\n  CONSTRAINT `refunds_ibfk_1` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`),\n  CONSTRAINT `refunds_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci'
+
+shoppingcart:
+'shoppingcart', 'CREATE TABLE `shoppingcart` (\n  `cart_id` char(36) NOT NULL DEFAULT (uuid()),\n  `customer_id` char(36) DEFAULT NULL,\n  `cart_status` varchar(50) NOT NULL,\n  PRIMARY KEY (`cart_id`),\n  KEY `customer_id` (`customer_id`),\n  CONSTRAINT `shoppingcart_ibfk_1` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`user_id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci'
+
+
+shoppingcart_item:
+'shoppingcart_item', 'CREATE TABLE `shoppingcart_item` (\n  `shopping_cart_item_id` char(36) NOT NULL DEFAULT (uuid()),\n  `cart_id` char(36) DEFAULT NULL,\n  `product_id` char(36) DEFAULT NULL,\n  `quantity` int NOT NULL DEFAULT \'1\',\n  PRIMARY KEY (`shopping_cart_item_id`),\n  KEY `cart_id` (`cart_id`),\n  KEY `product_id` (`product_id`),\n  CONSTRAINT `shoppingcart_item_ibfk_1` FOREIGN KEY (`cart_id`) REFERENCES `shoppingcart` (`cart_id`) ON DELETE CASCADE,\n  CONSTRAINT `shoppingcart_item_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci'
+
+
+review:
+'review', 'CREATE TABLE `review` (\n  `review_id` char(36) NOT NULL DEFAULT (uuid()),\n  `customer_id` char(36) DEFAULT NULL,\n  `product_id` char(36) DEFAULT NULL,\n  `rating` int NOT NULL,\n  `comment` text,\n  `pm_id` char(36) DEFAULT NULL,\n  `approval_status` varchar(50) NOT NULL,\n  PRIMARY KEY (`review_id`),\n  KEY `customer_id` (`customer_id`),\n  KEY `product_id` (`product_id`),\n  KEY `pm_id` (`pm_id`),\n  CONSTRAINT `review_ibfk_1` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`user_id`) ON DELETE CASCADE,\n  CONSTRAINT `review_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE CASCADE,\n  CONSTRAINT `review_ibfk_3` FOREIGN KEY (`pm_id`) REFERENCES `product_managers` (`pm_id`) ON DELETE SET NULL,\n  CONSTRAINT `review_chk_1` CHECK ((`rating` between 1 and 5))\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci'
+
+wishlist:
+'wishlist', 'CREATE TABLE `wishlist` (\n  `wishlist_id` char(36) NOT NULL DEFAULT (uuid()),\n  `customer_id` char(36) DEFAULT NULL,\n  `wishlist_status` varchar(50) NOT NULL,\n  PRIMARY KEY (`wishlist_id`),\n  KEY `customer_id` (`customer_id`),\n  CONSTRAINT `wishlist_ibfk_1` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`user_id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci'
+
+wishlist_items:
+'wishlist_items', 'CREATE TABLE `wishlist_items` (\n  `wishlist_item_id` char(36) NOT NULL DEFAULT (uuid()),\n  `wishlist_id` char(36) DEFAULT NULL,\n  `product_id` char(36) DEFAULT NULL,\n  PRIMARY KEY (`wishlist_item_id`),\n  KEY `wishlist_id` (`wishlist_id`),\n  KEY `product_id` (`product_id`),\n  CONSTRAINT `wishlist_items_ibfk_1` FOREIGN KEY (`wishlist_id`) REFERENCES `wishlist` (`wishlist_id`) ON DELETE CASCADE,\n  CONSTRAINT `wishlist_items_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci'
+
+
+product_managers:
+'product_managers', 'CREATE TABLE `product_managers` (\n  `pm_id` char(36) NOT NULL DEFAULT (uuid()),\n  `name` varchar(50) NOT NULL,\n  `middlename` varchar(50) DEFAULT NULL,\n  `surname` varchar(50) NOT NULL,\n  `email` varchar(100) NOT NULL,\n  `password` varchar(255) NOT NULL,\n  `phone_number` varchar(20) DEFAULT NULL,\n  PRIMARY KEY (`pm_id`),\n  UNIQUE KEY `email` (`email`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci'
+
+
+sales_managers:
+'sales_managers', 'CREATE TABLE `sales_managers` (\n  `sm_id` char(36) NOT NULL DEFAULT (uuid()),\n  `name` varchar(50) NOT NULL,\n  `middlename` varchar(50) DEFAULT NULL,\n  `surname` varchar(50) NOT NULL,\n  `email` varchar(100) NOT NULL,\n  `password` varchar(255) NOT NULL,\n  `phone_number` varchar(20) DEFAULT NULL,\n  PRIMARY KEY (`sm_id`),\n  UNIQUE KEY `email` (`email`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci'
+
+discount:
+'discount', 'CREATE TABLE `discount` (\n  `discount_id` char(36) NOT NULL DEFAULT (uuid()),\n  `product_id` char(36) DEFAULT NULL,\n  `discount_rate` decimal(5,2) NOT NULL,\n  `start_date` datetime NOT NULL,\n  `end_date` datetime NOT NULL,\n  `is_active` tinyint(1) NOT NULL DEFAULT \'1\',\n  PRIMARY KEY (`discount_id`),\n  KEY `product_id` (`product_id`),\n  CONSTRAINT `discount_ibfk_1` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci'
+
+
+delivery:
+'delivery', 'CREATE TABLE `delivery` (\n  `delivery_id` char(36) NOT NULL DEFAULT (uuid()),\n  `order_id` char(36) DEFAULT NULL,\n  `delivery_status` varchar(50) NOT NULL,\n  `addres_id` char(36) DEFAULT NULL,\n  PRIMARY KEY (`delivery_id`),\n  KEY `order_id` (`order_id`),\n  KEY `addres_id` (`addres_id`),\n  CONSTRAINT `delivery_ibfk_1` FOREIGN KEY (`order_id`) REFERENCES `orders` (`order_id`) ON DELETE CASCADE,\n  CONSTRAINT `delivery_ibfk_2` FOREIGN KEY (`addres_id`) REFERENCES `adres` (`customer_adres_id`) ON DELETE SET NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci'
+
+adres:
+'adres', 'CREATE TABLE `adres` (\n  `customer_adres_id` char(36) NOT NULL DEFAULT (uuid()),\n  `address` text NOT NULL,\n  `type` varchar(50) NOT NULL,\n  `name` varchar(100) DEFAULT NULL,\n  `customer_id` char(36) DEFAULT NULL,\n  PRIMARY KEY (`customer_adres_id`),\n  KEY `customer_id` (`customer_id`),\n  CONSTRAINT `adres_ibfk_1` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`user_id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci'

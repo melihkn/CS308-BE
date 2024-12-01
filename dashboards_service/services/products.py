@@ -23,7 +23,8 @@ def update_product(db: Session, product_id : int, productUpdate)-> Optional[Prod
     product = get_product_by_id(db, product_id)
     if not product:
         return None
-        
+    
+    productUpdate = productUpdate.dict()
 
     # Only update fields that were explicitly provided in the request
     for key, value in productUpdate.items():

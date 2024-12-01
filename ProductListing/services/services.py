@@ -1,17 +1,52 @@
 from sqlalchemy.orm import Session
-from models.models import ProductDB, ProductCreate, ProductUpdate, ReviewDB, ProductPopularity 
+from models.models import ProductDB, ProductCreate, ProductUpdate, ReviewDB, ProductPopularity, CategoryDB 
 from typing import List, Optional
 import uuid
 from fastapi import Path
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime
 from sqlalchemy import func, desc, asc, text
-from fuzzywuzzy import fuzz
 
 
 class ProductService:
     def __init__(self, db: Session):
         self.db = db
+
+    def get_category_info_of_product(self,product_id: str) -> dict:
+        """
+        Fetches the category information for a specific product.
+
+        Args:
+            product_id (str): The ID of the product to fetch the category for.
+
+        Returns:
+            dict: The category information.
+
+        Raises:
+            ValueError: If the product or category is not found.
+        """
+        # Fetch the product from the database
+        product = self.db.query(ProductDB).filter_by(product_id=product_id).first()
+        if not product:
+            raise ValueError("Product not found")
+
+        # Ensure the product has a category ID
+        if not product.category_id:
+            raise ValueError("Product has no category assigned")
+
+        # Fetch the category from the database
+        category = self.db.query(CategoryDB).filter_by(category_id=product.category_id).first()
+        if not category:
+            raise ValueError("Category not found")
+
+        # Return the category information as a dictionary
+        return {
+            "category_id": category.category_id,
+            "category_name": category.category_name,
+            "parent_category_id": category.parentcategory_id
+        }
+
+
 
     def get_all_products(self) -> List[ProductDB]:
         return self.db.query(ProductDB).all()

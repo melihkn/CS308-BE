@@ -43,7 +43,7 @@ class CartService:
         - a dictionary with the key "message" and a string value indicating that the item has been added to the cart.
         '''
 
-
+        print("Iyiyiz")
         # Check if the customer has an active cart
         cart = db.query(ShoppingCart).filter(ShoppingCart.customer_id == customer_id, ShoppingCart.cart_status == "active").first()
         # If not, create a new cart
@@ -57,13 +57,25 @@ class CartService:
 
         # Check if the item is already in the cart
         existing_item = db.query(ShoppingCartItem).filter(ShoppingCartItem.cart_id == cart.cart_id, ShoppingCartItem.product_id == cart_item.product_id).first()
-        # If it is, increase the quantity
+        print("Iyiyiz2")
+        # find the product in db
+        product = db.query(Product).filter(Product.product_id == cart_item.product_id).first()
+
         if existing_item:
-            existing_item.quantity += cart_item.quantity
-        # If not, create a new item which is the instance of ShoppingCartItem class (which is the mapping of the shoppingcart_item table in the database)
+            if product.quantity < cart_item.quantity + existing_item.quantity:
+                raise HTTPException(status_code=400, detail="Not enough stock")
+            else:
+                existing_item.quantity += cart_item.quantity
         else:
-            new_cart_item = ShoppingCartItem(cart_id=cart.cart_id, product_id=cart_item.product_id, quantity=cart_item.quantity)
-            db.add(new_cart_item)
+            # If the item is not in the cart, check if the quantity of the product is enough
+            if product.quantity < cart_item.quantity:
+                raise HTTPException(status_code=400, detail="Not enough stock")
+            else:
+                # If there is enough stock, create a new instance of the ShoppingCartItem class (which is the mapping of the shoppingcart_item table in the database)
+                new_cart_item = ShoppingCartItem(cart_id=cart.cart_id, product_id=cart_item.product_id, quantity=cart_item.quantity)
+                # add the new item to the database
+                db.add(new_cart_item)
+
 
         db.commit()
         return {"message": "Item added to the persistent cart."}
@@ -181,7 +193,10 @@ class CartService:
         if not item:
             raise HTTPException(status_code=404, detail="Item not found in cart")
 
-        item.quantity += 1
+        product = db.query(Product).filter(Product.product_id == product_id).first()
+        if product.quantity >= item.quantity + 1:
+            item.quantity += 1
+        
         db.commit()
         return {"message": "Item quantity increased in the cart"}
 
