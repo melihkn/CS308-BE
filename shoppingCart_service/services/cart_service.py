@@ -43,7 +43,7 @@ class CartService:
         - a dictionary with the key "message" and a string value indicating that the item has been added to the cart.
         '''
 
-
+        print("Iyiyiz")
         # Check if the customer has an active cart
         cart = db.query(ShoppingCart).filter(ShoppingCart.customer_id == customer_id, ShoppingCart.cart_status == "active").first()
         # If not, create a new cart
@@ -57,7 +57,7 @@ class CartService:
 
         # Check if the item is already in the cart
         existing_item = db.query(ShoppingCartItem).filter(ShoppingCartItem.cart_id == cart.cart_id, ShoppingCartItem.product_id == cart_item.product_id).first()
-
+        print("Iyiyiz2")
         # find the product in db
         product = db.query(Product).filter(Product.product_id == cart_item.product_id).first()
 
@@ -76,14 +76,6 @@ class CartService:
                 # add the new item to the database
                 db.add(new_cart_item)
 
-        # If it is and if there is enough stock
-        if product.quantity >= cart_item.quantity + existing_item.quantity:
-            if existing_item:
-                existing_item.quantity += cart_item.quantity
-            # If not, create a new item which is the instance of ShoppingCartItem class (which is the mapping of the shoppingcart_item table in the database)
-            else:
-                new_cart_item = ShoppingCartItem(cart_id=cart.cart_id, product_id=cart_item.product_id, quantity=cart_item.quantity)
-                db.add(new_cart_item)
 
         db.commit()
         return {"message": "Item added to the persistent cart."}
