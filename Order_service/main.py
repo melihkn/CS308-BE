@@ -1,29 +1,9 @@
 # main.py
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from Order_service.controllers.order_controller import router as order_router
+from controllers.order_controller import router as order_router
+from utils.db_utils import engine, Base
 import uvicorn
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
-
-# Replace with your actual MySQL connection string
-DATABASE_URL = "mysql+pymysql://root:MelihKN_53@localhost:3306/Myvet_db"
-
-# Create an engine
-engine = create_engine(DATABASE_URL)
-
-# Create a configured "Session" class
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-Base = declarative_base()
-
-# Dependency to get the session
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 # Initialize the app
 app = FastAPI()
@@ -47,3 +27,46 @@ app.include_router(order_router, prefix="/api/orders", tags=["Orders"])
 if __name__ == "__main__":
     uvicorn.run("main:app", host="127.0.0.1", port=8004, reload=True)
 
+# uvicorn main:app --reload --port 8004
+
+
+"""denemek  için:
+{
+  "customer_id": "734c8a28-917e-11ef-8816-dd891ae32718",
+  "total_price": 30,
+  "order_date": "2024-03-01",
+  "payment_status": "pending",
+  "invoice_link": null,
+  "order_status": 0,
+  "items": [
+    {
+      "product_id": "4d538b34-96a9-11ef-b8ae-7cb7217e15ee",
+      "quantity": 2,
+      "price_at_purchase": 15
+    }
+  ]
+}
+
+{
+  "customer_id": "734c8a28-917e-11ef-8816-dd891ae32718",
+  "total_price": 46,
+  "order_date": "2024-03-01",
+  "payment_status": "pending",
+  "invoice_link": null,
+  "order_status": 0,
+  "items": [
+    {
+      "product_id": "4d538b34-96a9-11ef-b8ae-7cb7217e15ee",
+      "quantity": 2,
+      "price_at_purchase": 15
+    },
+    {
+      "product_id": "57f72870-96a9-11ef-b8ae-7cb7217e15ee",
+      "quantity": 1,
+      "price_at_purchase": 16
+    }
+  ]
+}
+
+
+"""
