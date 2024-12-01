@@ -57,9 +57,24 @@ class CartService:
 
         # Check if the item is already in the cart
         existing_item = db.query(ShoppingCartItem).filter(ShoppingCartItem.cart_id == cart.cart_id, ShoppingCartItem.product_id == cart_item.product_id).first()
-        
+
         # find the product in db
         product = db.query(Product).filter(Product.product_id == cart_item.product_id).first()
+
+        if existing_item:
+            if product.quantity < cart_item.quantity + existing_item.quantity:
+                raise HTTPException(status_code=400, detail="Not enough stock")
+            else:
+                existing_item.quantity += cart_item.quantity
+        else:
+            # If the item is not in the cart, check if the quantity of the product is enough
+            if product.quantity < cart_item.quantity:
+                raise HTTPException(status_code=400, detail="Not enough stock")
+            else:
+                # If there is enough stock, create a new instance of the ShoppingCartItem class (which is the mapping of the shoppingcart_item table in the database)
+                new_cart_item = ShoppingCartItem(cart_id=cart.cart_id, product_id=cart_item.product_id, quantity=cart_item.quantity)
+                # add the new item to the database
+                db.add(new_cart_item)
 
         # If it is and if there is enough stock
         if product.quantity >= cart_item.quantity + existing_item.quantity:
