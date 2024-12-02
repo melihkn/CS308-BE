@@ -2,9 +2,9 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
-from review_settings import settings
-from dbContext_Review import get_db
-from review_models.models import Customer
+from .review_settings import settings
+from .dbContext_Review import get_db
+from .review_models.models import Customer
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")  # Path to your auth service token endpoint
 
