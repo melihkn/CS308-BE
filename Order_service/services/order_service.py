@@ -13,6 +13,9 @@ from models.models import (
 from sqlalchemy.exc import SQLAlchemyError
 from uuid import uuid4
 import time
+from services.InvoiceService import InvoiceService
+from services.EmailService import EmailService
+from models.models import Customer, Product
 
 ORDER_STATUS_MAP = {
     0: "pending",
@@ -99,13 +102,30 @@ class OrderService:
                     except Exception as e:
                         print(f"Failed to add OrderItem: {str(e)}")
                         raise e
-
+                    
+                db.commit()
+                """
                 # Commit the transaction
                 db.commit()
                 print("Transaction committed successfully.")
 
                 # Reload the order to include relationships
                 db.refresh(new_order)
+                """
+                # Generate the invoice
+                db.refresh(new_order)
+                invoice_path = InvoiceService.generate_invoice(new_order, db)
+                new_order.invoice_link = invoice_path  # Update invoice link in the order
+                db.commit()
+
+                # Send the invoice email
+                # take the customer email using the customer_id in order data and customer table in the database
+                customer_id = order_data.customer_id
+                customer = db.query(Customer).filter_by(user_id=customer_id).first()
+
+                customer_email = customer.email
+                EmailService.send_invoice_email(customer_email, invoice_path)
+
                 return new_order
 
             except ValueError as ve:
@@ -258,3 +278,5 @@ class OrderService:
 
         # Create the order
         return OrderService.create_order(order_create_data, db)
+
+    
