@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 # Import the CartService class from the services.cart_service module
 from services.cart_service import CartService
@@ -64,8 +64,8 @@ async def add_to_cart(cart_item: CartItem, customer_id: str = None, db: Session 
         try:
             CartService.add_item_to_persistent_cart(cart_item, customer_id, db)
             return {"message": "Item added to persistent cart.", "cart_items": CartService.get_cart(customer_id, db)}
-        except Exception as e:
-            raise HTTPException(status_code=500, detail="Could not add item to cart.")
+        except HTTPException as e:
+            raise HTTPException(status_code = e.status_code, detail=e.detail)
     else:
         return {"message": "Item added to session-based cart (handled on frontend)."}
 

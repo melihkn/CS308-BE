@@ -30,13 +30,14 @@ def create_review(db: Session, token: str, submitted_review: Review_Response):
     email : str = payload.get("sub")
     user = db.query(Customer).filter(Customer.email == email).first()
     user_id = user.user_id
+    approval_status = "APPROVED" if submitted_review.comment == "" else "PENDING"
     review = Review(
         review_id = str(uuid4()),
         customer_id = user_id,
         product_id = submitted_review.product_id,
         rating = submitted_review.rating,
         comment = submitted_review.comment,
-        approval_status = "PENDING"
+        approval_status = approval_status
     )
 
     db.add(review)
