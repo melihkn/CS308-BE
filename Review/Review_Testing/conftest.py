@@ -38,7 +38,7 @@ def setup_and_teardown():
 
     session = SessionLocal(bind=connection)
     yield session  # Provide the session to tests
-
+    session.rollback()
     session.close()
     transaction.rollback()  # Roll back all changes made during the test
     connection.close()
