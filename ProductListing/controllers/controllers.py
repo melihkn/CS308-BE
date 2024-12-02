@@ -2,29 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException, Path, status, Request
 import uuid
 from sqlalchemy.orm import Session
 from typing import List
-from models.models import Product, ProductCreate, ProductUpdate
-from services.services import ProductService
-from dbContext import get_db  # This dependency function provides the database session
+from ProductListing.models.models import Product, ProductCreate, ProductUpdate, ProductDB
+from ProductListing.services.services import ProductService
+from ProductListing.dbContext import get_db  # This dependency function provides the database session
 
 router = APIRouter(prefix="/products", tags=["Products"])
-
-
-@router.get("/{product_id}/category", response_model=dict)
-def get_product_category(product_id: str, db: Session = Depends(get_db)):
-    """
-    Get the category information for a specific product.
-    
-    Args:
-        product_id (str): The ID of the product to fetch the category for.
-        db (Session): The database session dependency.
-        
-    Returns:
-        dict: The category information.
-    """
-    # Fetch the product from the database
-    service = ProductService(db)
-    return service.get_category_info_of_product(product_id)
-    
 
 @router.get("/", response_model=List[Product])
 async def get_all_products(db: Session = Depends(get_db)):
@@ -99,7 +81,6 @@ async def update_product(
     service = ProductService(db)
     
     
-    
     product = service.update_product(product_id, product_data)
     
     if not product:
@@ -126,9 +107,10 @@ async def search_products(request: Request, db: Session = Depends(get_db)):
     data = await request.json()
     query = data.get("query", "").strip()  # Get the search query from the request body
 
-    if not query: #If query does not exists
+    if not query:
         raise HTTPException(status_code=400, detail="Search query cannot be empty.")
 
     service = ProductService(db)
     return service.search_product_by_name_description(query)
     # Query the database for matching products
+

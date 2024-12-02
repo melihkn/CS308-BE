@@ -1,52 +1,17 @@
 from sqlalchemy.orm import Session
-from models.models import ProductDB, ProductCreate, ProductUpdate, ReviewDB, ProductPopularity, CategoryDB 
+from ProductListing.models.models import ProductDB, ProductCreate, ProductUpdate, Review, ProductPopularity 
 from typing import List, Optional
 import uuid
 from fastapi import Path
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime
 from sqlalchemy import func, desc, asc, text
+from fuzzywuzzy import fuzz
 
 
 class ProductService:
     def __init__(self, db: Session):
         self.db = db
-
-    def get_category_info_of_product(self,product_id: str) -> dict:
-        """
-        Fetches the category information for a specific product.
-
-        Args:
-            product_id (str): The ID of the product to fetch the category for.
-
-        Returns:
-            dict: The category information.
-
-        Raises:
-            ValueError: If the product or category is not found.
-        """
-        # Fetch the product from the database
-        product = self.db.query(ProductDB).filter_by(product_id=product_id).first()
-        if not product:
-            raise ValueError("Product not found")
-
-        # Ensure the product has a category ID
-        if not product.category_id:
-            raise ValueError("Product has no category assigned")
-
-        # Fetch the category from the database
-        category = self.db.query(CategoryDB).filter_by(category_id=product.category_id).first()
-        if not category:
-            raise ValueError("Category not found")
-
-        # Return the category information as a dictionary
-        return {
-            "category_id": category.category_id,
-            "category_name": category.category_name,
-            "parent_category_id": category.parentcategory_id
-        }
-
-
 
     def get_all_products(self) -> List[ProductDB]:
         return self.db.query(ProductDB).all()
@@ -55,24 +20,16 @@ class ProductService:
         return self.db.query(ProductDB).filter(ProductDB.product_id == product_id).first()
 
     def create_product(self, product_data: ProductCreate) -> ProductDB:
-        # Ensure product_id is not set manually; it will be auto-generated
-        product_data_dict = product_data.dict()
         
-        # Create a new ProductDB instance without product_id
-        new_product = ProductDB(**product_data_dict)
-
+        product = ProductDB(**product_data.dict())
         try:
-            # Add and commit the new product
+            new_product = ProductDB(**product.dict())
             self.db.add(new_product)
             self.db.commit()
             self.db.refresh(new_product)
             return new_product
-
-        except IntegrityError as e:
-            self.db.rollback()  # Roll back in case of error to prevent partial commit
-            if "UNIQUE constraint failed" in str(e.orig):
-                raise ValueError("A product with this serial number already exists.")
-            raise ValueError("An error occurred while creating the product.") from e
+        except Exception as e:
+            raise ValueError(f"Error creating product: {e}")
 
 
 
@@ -141,11 +98,11 @@ class ProductService:
             db.query(
                 ProductDB.product_id,
                 (func.sum(ProductDB.item_sold) * 0.5 +       # Weight for sales
-                func.avg(ReviewDB.rating) * 0.3 +             # Weight for rating
-                func.count(ReviewDB.review_id) * 0.2          # Weight for review count
+                func.avg(Review.rating) * 0.3 +             # Weight for rating
+                func.count(Review.review_id) * 0.2          # Weight for review count
                 ).label("popularity_score")
             )
-            .outerjoin(ReviewDB, ReviewDB.product_id == ProductDB.product_id)
+            .outerjoin(Review, Review.product_id == ProductDB.product_id)
             .group_by(ProductDB.product_id)
             .all()
         )
@@ -168,14 +125,18 @@ class ProductService:
         if not product:
             return None
 
-        # Only update fields that were explicitly provided in the request
-        for key, value in product_data.dict(exclude_unset=True).items():
-            if(value is not None):
+        # Convert product_data to a Pydantic model if it's a dictionary
+        if isinstance(product_data, dict):
+            product_data = ProductUpdate(**product_data)
+
+        # Dynamically update fields provided in the request
+        for key, value in product_data.model_dump(exclude_unset=True).items():
+            if value is not None and hasattr(product, key):  # Check if the attribute exists
                 setattr(product, key, value)  # Dynamically set attribute
 
         # Commit changes to the database
         self.db.commit()
-        self.db.refresh(product)
+        self.db.refresh(product)  # Refresh the product instance with updated values
         return product
 
 
