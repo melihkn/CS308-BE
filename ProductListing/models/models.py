@@ -1,11 +1,14 @@
 from sqlalchemy import Column, String, Text, Integer, ForeignKey, CHAR, Float, DateTime, DECIMAL
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from pydantic import BaseModel, Field
 from typing import Optional
 import uuid
 from datetime import datetime
 from sqlalchemy.orm import relationship
+from pydantic import BaseModel, ConfigDict
+
+
 Base = declarative_base()
 
 # SQLAlchemy Model
@@ -23,28 +26,37 @@ class ProductDB(Base):
     warranty_status = Column(Integer, nullable=True)
     distributor = Column(String(100), nullable=True) 
     image_url = Column(String(255), nullable=True)
-    price = Column(DECIMAL, nullable=False)  
-    cost = Column(DECIMAL, nullable=False)   
+    price = Column(DECIMAL(10,2), nullable=False)  
+    cost = Column(DECIMAL(10,2), nullable=False)   
     # Relationship to reviews
-    reviews = relationship("ReviewDB", back_populates="product")
+    reviews = relationship("Review", back_populates="product")
 
     def __repr__(self):
         return f"<Product(name={self.name}, model={self.model}, quantity={self.quantity})>"
 
-# SQLAlchemy Model for Reviews
-class ReviewDB(Base):
-    __tablename__ = 'reviews'
-
-    review_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    customer_id = Column(String(36), nullable=False)
-    product_id = Column(String(36), ForeignKey('products.product_id', ondelete="CASCADE"), nullable=False)
+class Review(Base):
+    __tablename__ = 'review'
+    review_id = Column(CHAR(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    customer_id = Column(CHAR(36), ForeignKey('customers.user_id'))
+    product_id = Column(CHAR(36), ForeignKey('products.product_id'))
     rating = Column(Integer, nullable=False)
-    comment = Column(Text, nullable=True)
-    pm_id = Column(CHAR(36), nullable=True)
+    comment = Column(Text)
+    pm_id = Column(CHAR(36), ForeignKey('product_managers.pm_id'))
     approval_status = Column(String(50), nullable=False)
-
-    # Relationship back to product
+    
+    # Relationship to product
     product = relationship("ProductDB", back_populates="reviews")
+
+class Customer(Base):
+    __tablename__ = 'customers'
+    user_id = Column(CHAR(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    name = Column(String(50), nullable=False)
+    middlename = Column(String(50))
+    surname = Column(String(50), nullable=False)
+    email = Column(String(100), unique=True, nullable=False)
+    password = Column(String(255), nullable=False)  # store hashed password
+    phone_number = Column(String(20))
+
 
 # Model for ProductPopularity
 class ProductPopularity(Base):
@@ -56,21 +68,23 @@ class ProductPopularity(Base):
 
 # Pydantic Model for Product
 class Product(BaseModel):
-    product_id: uuid.UUID
+    product_id: str
     name: str
     model: str
     description: Optional[str] = None
+    category_id: Optional[int] = None
     quantity: int
+    price: float 
+    cost: float 
+    item_sold: int 
     warranty_status: Optional[int] = None
     distributor: Optional[str] = None
     image_url: Optional[str] = None
-    item_sold: int  
-    price: float 
-    cost: float  
-    category_id: Optional[int] = None
+    
+     
+    
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 
@@ -83,24 +97,17 @@ class Category(Base):
 
     def __repr__(self):
         return f"<Category(category_name={self.category_name}, parentcategory_id={self.parentcategory_id})>"
-
-
-class CategoryDB(Base):
-    __tablename__ = "category"  # Table name in the database
-
-    category_id = Column(Integer, primary_key=True, autoincrement=True)
-    parentcategory_id = Column(Integer, ForeignKey("category.category_id", ondelete="SET NULL"), nullable=True)
-    category_name = Column(String(100), nullable=False)
-
-    # Add extend_existing=True to avoid redefinition errors
-    __table_args__ = {"extend_existing": True}
-
-    # Relationship to reference parent and children categories
-    parent = relationship("CategoryDB", remote_side=[category_id], backref="children")
-
-    def __repr__(self):
-        return f"<CategoryDB(category_id={self.category_id}, category_name={self.category_name}, parentcategory_id={self.parentcategory_id})>"
     
+# Product Managers Table
+class ProductManager(Base):
+    __tablename__ = 'product_managers'
+    pm_id = Column(CHAR(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    name = Column(String(50), nullable=False)
+    middlename = Column(String(50))
+    surname = Column(String(50), nullable=False)
+    email = Column(String(100), unique=True, nullable=False)
+    password = Column(String(255), nullable=False)  # store hashed password
+    phone_number = Column(String(20))
 
 # Pydantic Model for creating a product
 class ProductCreate(BaseModel):
@@ -110,28 +117,27 @@ class ProductCreate(BaseModel):
     category_id: Optional[int] = None
     serial_number: str
     quantity: int = Field(..., ge=0, description="Available quantity")
+    price: float = Field(..., description="Selling price of the product")
+    cost: float = Field(..., description="Cost price of the product")
+    item_sold: int = Field(0, description="Total items sold")  # Default 0
     warranty_status: Optional[int] = None
     distributor: Optional[str] = None
     image_url: Optional[str] = None
-    item_sold: int = Field(0, description="Total items sold")  # Default 0
-    price: float = Field(..., description="Selling price of the product")
-    cost: float = Field(..., description="Cost price of the product")
+    
+    
 
 # Pydantic Model for updating a product
 class ProductUpdate(BaseModel):
-    name: Optional[str] = None
-    model: Optional[str] = None
-    description: Optional[str] = None
-    category_id: Optional[int] = None
-    serial_number: Optional[str] = None
-    quantity: Optional[int] = None
-    warranty_status: Optional[int] = None
-    distributor: Optional[str] = None
-    image_url: Optional[str] = None
-    item_sold: Optional[int] = None  # Allow updates
-    price: Optional[float] = None  # Allow updates
-    cost: Optional[float] = None  # Allow updates
+    name: Optional[str]
+    model: Optional[str]
+    description: Optional[str]
+    category_id: Optional[int]
+    serial_number: Optional[str]
+    quantity: Optional[int]
+    price: Optional[float]
+    cost: Optional[float]
+    item_sold: Optional[int]
+    warranty_status: Optional[str]
+    distributor: Optional[str]
+    image_url: Optional[str]
 
-
-class user2(BaseModel):
-    username: Optional[str] = None

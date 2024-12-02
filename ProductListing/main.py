@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from controllers.controllers import router as product_router
+from ProductListing.controllers.controllers import router as product_router
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -22,10 +22,5 @@ app.include_router(product_router)
 def health_check():
     return {"message": "Product Listing Microservice is running"}
 
-
-from fastapi.staticfiles import StaticFiles
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
 if __name__ == "__main__":
     uvicorn.run("main:app", host="127.0.0.1", port=8002, reload=True)
-
