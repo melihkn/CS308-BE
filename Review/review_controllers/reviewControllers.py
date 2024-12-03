@@ -44,6 +44,6 @@ async def get_reviews(product_id: str,db: Session = Depends(get_db)):
 
 @router.get("/calculate_rating/{product_id}")
 def calculate_rating(product_id: str,db: Session = Depends(get_db)):
-    average, length = calculate_average_rating(db,product_id)
-    return {"average_rating": average,"number_of_reviews": length}
+    average= calculate_average_rating(db,product_id)
+    return average
 

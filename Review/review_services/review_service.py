@@ -79,4 +79,4 @@ def calculate_average_rating(db: Session, product_id: str):
         for i in reviews:
             avg += i.rating
         avg = avg/len(reviews)
-        return avg, len(reviews)
+        return avg
