@@ -1,3 +1,4 @@
+import os
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
@@ -260,7 +261,8 @@ async def get_invoice(order_id: str, db: Session = Depends(get_db)):
     if not order or not order.invoice_link:
         raise HTTPException(status_code=404, detail="Invoice not found")
 
-    print(order.invoice_link)
+    if not os.path.exists(order.invoice_link):
+        raise HTTPException(status_code=404, detail="Invoice file not found")
 
     # Return the PDF file
     return FileResponse(
