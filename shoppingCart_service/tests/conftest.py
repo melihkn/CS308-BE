@@ -1,10 +1,10 @@
 from sqlalchemy import event, create_engine
 from sqlalchemy.orm import sessionmaker
 import pytest
-from models.models import Product, ShoppingCart
+from ..models.models import Product, ShoppingCart
 from sqlalchemy.orm import Session
-from models.models import ShoppingCartItem, Customer
-from models.models import Base
+from ..models.models import ShoppingCartItem, Customer
+from ..models.models import Base
 
 # Replace with your database URL
 # Replace with your database URL

@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 # Import the cart_router from the controllers.cart_controller module
-from controllers.cart_controller import router as cart_router
+from .controllers.cart_controller import router as cart_router
 # Import the product router 
-from controllers.product_controller import router as product_router  
+from .controllers.product_controller import router as product_router  
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
