@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from review_settings import settings
 from dbContext_Review import get_db
 from review_models.models import Customer
-from review_schemas.schemas import Review_Response, Get_Review_Response
+from review_schemas.schemas import Review_Response, Get_Review_Response, Review_Request
 from review_services.review_service import check_user_orders, create_review,get_all_reviews_for_certain_product,calculate_average_rating
 
 
@@ -23,7 +23,7 @@ router = APIRouter(prefix="/reviews")
 
 
 @router.post("/add_review",response_model=Review_Response,dependencies=[Depends(verify_user_role)])
-async def add_review(submited_review: Review_Response, db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
+async def add_review(submited_review: Review_Request, db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
     
     #checks if the user of the token ordered the product whose id's is given as parameter
     check = check_user_orders(db, token, submited_review.product_id)
@@ -42,8 +42,8 @@ async def get_reviews(product_id: str,db: Session = Depends(get_db)):
     return reviews
 
 
-@router.get("/calculate_rating")
-def calculate_rating(average_of_ratings: Get_Review_Response,db: Session = Depends(get_db)):
-    average = calculate_average_rating(db,average_of_ratings)
+@router.get("/calculate_rating/{product_id}")
+def calculate_rating(product_id: str,db: Session = Depends(get_db)):
+    average= calculate_average_rating(db,product_id)
     return average
 
