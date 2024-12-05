@@ -1,12 +1,39 @@
-from fastapi import APIRouter, Depends, HTTPException, Path, status, Request
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, status, Request
 import uuid
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from typing import List
-from ProductListing.models.models import Product, ProductCreate, ProductUpdate, ProductDB
+from ProductListing.models.models import Product, ProductCreate, ProductUpdate, ProductDB, Category,CategoryDB
 from ProductListing.services.services import ProductService
 from ProductListing.dbContext import get_db  # This dependency function provides the database session
+from typing import List, Optional
+from services.services import ProductService
+from dbContext import get_db  # This dependency function provides the database session
 
 router = APIRouter(prefix="/products", tags=["Products"])
+
+
+class CategoriesSchema(BaseModel):
+    category_id : int
+    category_name : str
+
+
+@router.get("/{product_id}/category", response_model=dict)
+def get_product_category(product_id: str, db: Session = Depends(get_db)):
+    """
+    Get the category information for a specific product.
+    
+    Args:
+        product_id (str): The ID of the product to fetch the category for.
+        db (Session): The database session dependency.
+        
+    Returns:
+        dict: The category information.
+    """
+    # Fetch the product from the database
+    service = ProductService(db)
+    return service.get_category_info_of_product(product_id)
+    
 
 @router.get("/", response_model=List[Product])
 async def get_all_products(db: Session = Depends(get_db)):
@@ -113,4 +140,45 @@ async def search_products(request: Request, db: Session = Depends(get_db)):
     service = ProductService(db)
     return service.search_product_by_name_description(query)
     # Query the database for matching products
+
+
+
+@router.get('/get/categories', response_model=List[CategoriesSchema])
+async def get_categories(db: Session = Depends(get_db)):
+    return db.query(CategoryDB).all()
+
+
+class ProductSchema(BaseModel):
+    product_id: str
+    name: str
+    model: str
+    description: Optional[str]
+    category_id: Optional[int]
+    quantity: int
+    price: float
+    distributor: Optional[str]
+    image_url: Optional[str]
+
+    class Config:
+        orm_mode = True
+
+@router.get("/getproduct/category/{category_id}", response_model=List[ProductSchema])
+async def get_products_by_category(
+    category_id: int,
+    db: Session = Depends(get_db)
+):
+    print(f"Received category_id: {category_id}")  # Log the incoming category_id
+    try:
+        if category_id is not None:
+            products = db.query(ProductDB).filter(ProductDB.category_id == category_id).all()
+            print(f"Filtered Products: {products}")  # Log the filtered products
+            if not products:
+                raise HTTPException(status_code=404, detail="No products found for this category")
+            return products
+        products = db.query(ProductDB).all()
+        print(f"All Products: {products}")  # Log all products if no filter is applied
+        return products
+    except Exception as e:
+        print(f"Error: {e}")
+        raise HTTPException(status_code=500, detail="Server Error")
 

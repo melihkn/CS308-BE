@@ -1,3 +1,4 @@
+import os
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
@@ -62,8 +63,8 @@ output is sth like:
 @router.post("/create", response_model=OrderResponseSchema)
 async def create_order(order: OrderCreateSchema, db: Session = Depends(get_db)):
     try:
-        new_order = OrderService.create_order(order, db)
-        
+        """
+        new_order = OrderService.create_order(order, db)       
         # Convert the response to match the schema
         return OrderResponseSchema(
             order_id=new_order.order_id,
@@ -72,6 +73,25 @@ async def create_order(order: OrderCreateSchema, db: Session = Depends(get_db)):
             order_date=new_order.order_date.strftime("%Y-%m-%d %H:%M:%S"),
             payment_status=new_order.payment_status,
             invoice_link=new_order.invoice_link,
+            order_status=new_order.order_status,
+            items=[
+                {
+                    "product_id": item.product_id,
+                    "quantity": item.quantity,
+                    "price": item.price_at_purchase,
+                }
+                for item in new_order.order_items
+            ]
+        )
+        """
+        new_order = OrderService.create_order(order, db)
+        return OrderResponseSchema(
+            order_id=new_order.order_id,
+            customer_id=new_order.customer_id,
+            total_price=new_order.total_price,
+            order_date=new_order.order_date.strftime("%Y-%m-%d %H:%M:%S"),
+            payment_status=new_order.payment_status,
+            invoice_link=new_order.invoice_link,  # Include the invoice link in the response
             order_status=new_order.order_status,
             items=[
                 {
@@ -221,4 +241,33 @@ async def update_order_status(order_id: str, status_update: OrderStatusUpdateSch
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+
+from fastapi.responses import FileResponse
+
+"""
+port 8004:
+input url: api/orders/invoice/ORDER_ID
+
+output is the invoice PDF file for the given order ID.
+"""
+@router.get("/invoice/{order_id}", response_class=FileResponse)
+async def get_invoice(order_id: str, db: Session = Depends(get_db)):
+    """
+    Serve the invoice PDF for the given order ID.
+    """
+    # Fetch the order details
+    order = OrderService.get_order(order_id, db)
+    if not order or not order.invoice_link:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+
+    if not os.path.exists(order.invoice_link):
+        raise HTTPException(status_code=404, detail="Invoice file not found")
+
+    # Return the PDF file
+    return FileResponse(
+        order.invoice_link,  # Path to the invoice PDF
+        media_type="application/pdf",
+        filename=f"Invoice-{order_id}.pdf"  # Name of the file when downloaded
+    )
 

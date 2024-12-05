@@ -11,7 +11,7 @@ from ..dbContext_Review import get_db
 from ..review_models.models import Customer, Review,Order,OrderItem
 from uuid import uuid4
 from sqlalchemy import and_
-from ..review_schemas.schemas import Review_Response,Get_Review_Response
+from ..review_schemas.schemas import Review_Response,Get_Review_Response,Review_Request
 
 def check_user_orders(db: Session, token: str ,product_id: str):
     payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
@@ -25,18 +25,19 @@ def check_user_orders(db: Session, token: str ,product_id: str):
         return False
 
 
-def create_review(db: Session, token: str, submitted_review: Review_Response):
+def create_review(db: Session, token: str, submitted_review: Review_Request):
     payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
     email : str = payload.get("sub")
     user = db.query(Customer).filter(Customer.email == email).first()
     user_id = user.user_id
+    approval_status = "APPROVED" if submitted_review.comment == "" else "PENDING"
     review = Review(
         review_id = str(uuid4()),
         customer_id = user_id,
         product_id = submitted_review.product_id,
         rating = submitted_review.rating,
         comment = submitted_review.comment,
-        approval_status = "PENDING"
+        approval_status = approval_status
     )
 
     db.add(review)
@@ -72,7 +73,7 @@ def calculate_average_rating(db: Session, product_id: str):
                                       ).all()
     
     if len(reviews) == 0:
-        return 0.0
+        return 0
     else:
         avg = 0
         for i in reviews:
