@@ -140,4 +140,3 @@ class ProductUpdate(BaseModel):
     warranty_status: Optional[str]
     distributor: Optional[str]
     image_url: Optional[str]
-
