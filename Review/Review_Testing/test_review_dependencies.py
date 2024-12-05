@@ -24,5 +24,7 @@ def test_verify_user_role_success(setup_and_teardown):
     # Verify no exception is raised
     try:
         verify_user_role(token=token, db=db_session)
+        db_session.rollback()
     except HTTPException as e:
         pytest.fail(f"verify_user_role raised an exception: {e}")
+        db_session.rollback()

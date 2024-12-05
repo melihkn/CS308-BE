@@ -85,7 +85,7 @@ def test_add_review(db_session):
     db_session.execute(text("DELETE FROM customers WHERE user_id = :user_id"), {"user_id": customer_id})
     db_session.execute(text("DELETE FROM products WHERE product_id = :product_id"), {"product_id":product_id}) 
     db_session.commit()
-
+    db_session.rollback()
 
 def test_get_reviews(db_session):
     # Insert test data
@@ -122,7 +122,7 @@ def test_get_reviews(db_session):
     db_session.query(Customer).filter_by(user_id=customer_id).delete()
     db_session.query(Product).filter_by(product_id=product_id).delete()
     db_session.commit()
-
+    db_session.rollback()
 
 
 def test_calculate_rating(db_session):
@@ -173,4 +173,4 @@ def test_calculate_rating(db_session):
     db_session.query(Customer).filter_by(user_id=customer_id).delete()
     db_session.query(Product).filter_by(product_id=product_id).delete()
     db_session.commit()
-
+    db_session.rollback()

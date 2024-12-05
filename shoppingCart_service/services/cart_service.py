@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 # Import the ShoppingCart and ShoppingCartItem classes from the models module
-from models.models import ShoppingCart, ShoppingCartItem, Product, CartAdjustment
+from ..models.models import ShoppingCart, ShoppingCartItem, Product, CartAdjustment
 
 class CartService:
     @staticmethod

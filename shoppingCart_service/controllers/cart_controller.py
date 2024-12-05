@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 # Import the CartService class from the services.cart_service module
-from services.cart_service import CartService
-from utils.db_utils import get_db
+from ..services.cart_service import CartService
+from ..utils.db_utils import get_db
 from pydantic import BaseModel
 from typing import List
-from models.models import CartAdjustment, CartItem # these are the pydantic models for the cart item and cart adjustment (for format handling in requests coming from frontend)
+from ..models.models import CartAdjustment, CartItem # these are the pydantic models for the cart item and cart adjustment (for format handling in requests coming from frontend)
 
 router = APIRouter()
 

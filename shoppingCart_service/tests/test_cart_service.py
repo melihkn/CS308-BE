@@ -1,6 +1,6 @@
 import pytest
 from sqlalchemy.orm import Session
-from models.models import ShoppingCart, ShoppingCartItem, Product, Category
+from ..models.models import ShoppingCart, ShoppingCartItem, Product, Category
 
 
 

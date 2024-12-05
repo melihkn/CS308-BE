@@ -89,6 +89,7 @@ def test_get_all_reviews_for_certain_product(db_session):
     db_session.query(Customer).filter_by(user_id=customer_id).delete()
     db_session.query(Product).filter_by(product_id=product_id).delete()
     db_session.commit()
+    db_session.rollback()
 
 
 def test_calculate_average_rating(db_session):
@@ -130,3 +131,4 @@ def test_calculate_average_rating(db_session):
     db_session.query(Customer).filter_by(user_id=customer_id).delete()
     db_session.query(Product).filter_by(product_id=product_id).delete()
     db_session.commit()
+    db_session.rollback()
