@@ -1,9 +1,0 @@
-"""
-pip install fastapi
-pip install sqlalchemy
-pip install jose
-pip install httpx
-pip install pytest
-pip install python-dotenv
-pip install pydantic_settings
-"""
