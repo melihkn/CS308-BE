@@ -96,6 +96,8 @@ class Wishlist(Base):
     product_id = Column(CHAR(36), ForeignKey('products.product_id', ondelete="CASCADE"))
     customer = relationship("Customer", back_populates="wishlists")
 
+    name = Column(VARCHAR(255), nullable=True)  # New column for wishlist name
+
 # Shopping Cart Table
 class ShoppingCart(Base):
     __tablename__ = 'shopping_cart'
