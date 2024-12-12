@@ -70,8 +70,8 @@ class OrderItem(Base):
     quantity = Column(Integer, nullable=False, default=1)
 
     # Relationships
-    order = relationship("Order", back_populates="order_items")
-    product = relationship("Product", back_populates="order_items")
+    order = relationship("Order", back_populates="order_items") # order items has order relationship 
+    product = relationship("Product", back_populates="order_items") # order items has product relationship 
 
 
 # Products Table
@@ -91,12 +91,14 @@ class Product(Base):
     price = Column(DECIMAL(10, 2), nullable=False, default=0.00)
     item_sold = Column(Integer, nullable=False, default=0)
 
-    # Relationships
-    category = relationship("Category", back_populates="products")
-    order_items = relationship("OrderItem", back_populates="product", cascade="all, delete-orphan")
-    wishlist_items = relationship("WishlistItem", back_populates="product", cascade="all, delete-orphan")
-    reviews = relationship("Review", back_populates="product", cascade="all, delete-orphan")
-    shopping_cart_items = relationship("ShoppingCartItem", back_populates="product", cascade="all, delete-orphan")
+    # Relationships -> a product can have multiple reviews, order items, wishlist items, and shopping cart items
+
+    # back_populates is used to define the relationship from the other side which means the other side of the relationship should have the same name
+    category = relationship("Category", back_populates="products") # product has category relationship 
+    order_items = relationship("OrderItem", back_populates="product", cascade="all, delete-orphan") # product has order items relationship 
+    wishlist_items = relationship("WishlistItem", back_populates="product", cascade="all, delete-orphan") # product has wishlist items relationship 
+    reviews = relationship("Review", back_populates="product", cascade="all, delete-orphan") # product has reviews relationship 
+    shopping_cart_items = relationship("ShoppingCartItem", back_populates="product", cascade="all, delete-orphan") # product has shopping cart items relationship
 
 
 # Category Table
@@ -132,12 +134,12 @@ class WishlistItem(Base):
     __tablename__ = 'wishlist_items'
 
     wishlist_item_id = Column(CHAR(36), primary_key=True, default=lambda: str(uuid4()))
-    wishlist_id = Column(CHAR(36), ForeignKey('wishlist.wishlist_id', ondelete="CASCADE"), nullable=True)
-    product_id = Column(CHAR(36), ForeignKey('products.product_id', ondelete="CASCADE"), nullable=True)
+    wishlist_id = Column(CHAR(36), ForeignKey('wishlist.wishlist_id', ondelete="CASCADE"), nullable=True) # wishlist silinirse wishlist itemlar da silinir 
+    product_id = Column(CHAR(36), ForeignKey('products.product_id', ondelete="CASCADE"), nullable=True) # product silinirse wishlist itemlar da silinir 
 
     # Relationships
-    wishlist = relationship("Wishlist", back_populates="wishlist_items")
-    product = relationship("Product", back_populates="wishlist_items")
+    wishlist = relationship("Wishlist", back_populates="wishlist_items") # wishlist item has wishlist relationship 
+    product = relationship("Product", back_populates="wishlist_items") # wishlist item has product relationship 
 
 
 # Shopping Cart Table
@@ -181,45 +183,3 @@ class Review(Base):
     # Relationships
     customer = relationship("Customer", back_populates="reviews")
     product = relationship("Product", back_populates="reviews")
-
-
-# Pydantic models
-from pydantic import BaseModel, Field
-from typing import List, Optional
-
-# Order Models
-class OrderItemCreateSchema(BaseModel):
-    product_id: str
-    quantity: int
-    price_at_purchase: float
-
-
-class OrderCreateSchema(BaseModel):
-    customer_id: str
-    total_price: float
-    order_date: str
-    payment_status: str
-    invoice_link: Optional[str]
-    order_status: int
-    items: List[OrderItemCreateSchema]
-
-class OrderItemResponseSchema(BaseModel):
-    product_id: str
-    quantity: int
-    price: float
-
-class OrderResponseSchema(BaseModel):
-    order_id: str
-    customer_id: str
-    total_price: float
-    order_date: str
-    payment_status: str
-    invoice_link: Optional[str]
-    order_status: int
-    items: List[OrderItemResponseSchema]
-
-
-class OrderStatusUpdateSchema(BaseModel):
-    status: int
-
-
