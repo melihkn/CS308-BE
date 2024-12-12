@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from dbContext import engine, Base
 from fastapi.middleware.cors import CORSMiddleware
 from controllers.wishlist_controller import router as wishlist_router
+from controllers.wishlist_item_controller import router as wishlist_item_router
 import uvicorn 
 
 # Initialize FastAPI app
@@ -25,6 +26,7 @@ Base.metadata.create_all(bind=engine)
 
 # Include routers
 app.include_router(wishlist_router, prefix="/api/wishlists", tags=["wishlists"])
+app.include_router(wishlist_item_router, prefix="/api/wishlist_items", tags=["wishlist_items"])
 
 # Run the application with Uvicorn on port 8005
 if __name__ == "__main__":
