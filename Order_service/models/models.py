@@ -183,6 +183,18 @@ class Review(Base):
     product = relationship("Product", back_populates="reviews")
 
 
+# Refund Table
+class Refund(Base):
+    __tablename__ = 'refund'
+    refund_id = Column(CHAR(36), primary_key=True, default=generate_uuid)
+    order_id = Column(CHAR(36), ForeignKey('orders.order_id'))
+    order_item_id = Column(CHAR(36), ForeignKey('order_items.order_item_id'))
+    request_date = Column(DateTime, nullable=False, default=datetime.utcnow)
+    status = Column(String(50), nullable=False)
+    refund_amount = Column(DECIMAL(10, 2), nullable=False)
+    sm_id = Column(CHAR(36), ForeignKey('sales_managers.sm_id'))
+
+
 # Pydantic models
 from pydantic import BaseModel, Field
 from typing import List, Optional
