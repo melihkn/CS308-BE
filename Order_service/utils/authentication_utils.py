@@ -2,9 +2,9 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
-from Order_service.utils.order_settings import settings
 from utils.db_utils import get_db
 from models.models import Customer
+from utils.order_settings import settings
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")  # Path to your auth service token endpoint
 
@@ -17,10 +17,8 @@ def verify_user_role(token: str = Depends(oauth2_scheme), db: Session = Depends(
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        print("Verifying user")
         # Decode JWT token using your JWT secret and algorithm
         payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
-        print(token)
         
         # Extract user role from token
         role: str = payload.get("role")

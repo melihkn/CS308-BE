@@ -258,16 +258,27 @@ async def get_invoice(order_id: str, db: Session = Depends(get_db)):
     """
     # Fetch the order details
     order = OrderService.get_order(order_id, db)
+
+    # Get the current directory of this file
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+
+    # Define the path to the invoices directory relative to this file
+    invoices_dir = os.path.join(current_dir, "../invoices")
+
+    # Ensure the invoices directory exists
+    os.makedirs(invoices_dir, exist_ok=True)
+
+    # Define the full path for the invoice file
+    invoice_path = os.path.join(invoices_dir, f"INV-{order.order_id}.pdf")
     if not order or not order.invoice_link:
         raise HTTPException(status_code=404, detail="Invoice not found")
 
-    if not os.path.exists(order.invoice_link):
+    if not os.path.exists(invoice_path):
         raise HTTPException(status_code=404, detail="Invoice file not found")
 
     # Return the PDF file
     return FileResponse(
-        order.invoice_link,  # Path to the invoice PDF
+        invoice_path,  # Path to the invoice PDF
         media_type="application/pdf",
         filename=f"Invoice-{order_id}.pdf"  # Name of the file when downloaded
     )
-
