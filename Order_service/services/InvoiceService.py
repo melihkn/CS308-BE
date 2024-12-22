@@ -14,6 +14,18 @@ class InvoiceService:
         pdf.add_page()
         pdf.set_font("Arial", size=12)
 
+        # Get the current directory of this file
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+
+        # Define the path to the invoices directory relative to this file
+        invoices_dir = os.path.join(current_dir, "../invoices")
+
+        # Ensure the invoices directory exists
+        os.makedirs(invoices_dir, exist_ok=True)
+
+        # Define the full path for the invoice file
+        invoice_path = os.path.join(invoices_dir, f"INV-{order.order_id}.pdf")
+
         # Add Order Details
         pdf.cell(200, 10, txt=f"Invoice for Order: {order.order_id}", ln=True, align="C")
         pdf.ln(10)
@@ -42,7 +54,6 @@ class InvoiceService:
         pdf.cell(200, 10, txt=f"Total Price: ${order.total_price}", ln=True)
 
         # Save the PDF file
-        invoice_path = f"./invoices/INV-{order.order_id}.pdf"
         pdf.output(invoice_path)
         return invoice_path
 

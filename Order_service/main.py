@@ -2,6 +2,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from controllers.order_controller import router as order_router
+from controllers.refund_cancel_controller import router as refund_cancel_router
 from utils.db_utils import engine, Base
 import uvicorn
 
@@ -22,6 +23,7 @@ Base.metadata.create_all(bind=engine)
 
 # Include routers
 app.include_router(order_router, prefix="/api/orders", tags=["Orders"])
+app.include_router(refund_cancel_router, tags=["Refund/Cancel"])
 
 # Run the application with Uvicorn on port 8004
 if __name__ == "__main__":
