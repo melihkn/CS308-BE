@@ -16,10 +16,11 @@ import uuid
 router = APIRouter()
 
 class OrderCreate(BaseModel):
+    order_id: str
     customer_id: str                       # ID of the customer placing the order
     total_price: Decimal                   # Total price of the order
     order_date: datetime = Field(default_factory=datetime.utcnow)  # Order date defaults to current time
-    order_status: str                      # Status of the order (e.g., "pending", "completed")
+    order_status: int                      # Status of the order (e.g., "pending", "completed")
     payment_status: str                    # Payment status (e.g., "paid", "unpaid")
     invoice_link: Optional[str] = None     # Optional link to an invoice
 
@@ -27,6 +28,7 @@ class OrderCreate(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
 class OrderItemCreate(BaseModel):
+    order_item_id: str
     product_id: str                         # ID of the product being ordered
     order_id: str                           # ID of the order to which this item belongs
     price_at_purchase: Decimal              # Price of the product at the time of purchase
