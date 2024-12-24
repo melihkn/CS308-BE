@@ -9,6 +9,7 @@ from controllers.discountControllers import router as dashboard_router
 from controllers.orderControllers import router as order_router
 from controllers.salesManagerProductController import router as product_router
 from controllers.customerControllers import router as customer_router
+from controllers.orderController import router as order_router_pm
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -27,6 +28,7 @@ app.include_router(customer_router, prefix="/SalesManager")
 app.include_router(product_manager_controller, prefix="/ProductManager")
 app.include_router(review_controller, prefix="/ProductManager")
 app.include_router(category_router, prefix="/ProductManager")
+app.include_router(order_router_pm, prefix="/ProductManager")
 
 @app.get("/")
 def read_root():
