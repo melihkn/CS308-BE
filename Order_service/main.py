@@ -32,11 +32,18 @@ if __name__ == "__main__":
 # uvicorn main:app --reload --port 8004
 
 
+
+
+
 """denemek  için:
+
 {
   "customer_id": "734c8a28-917e-11ef-8816-dd891ae32718",
   "total_price": 30,
   "order_date": "2024-03-01",
+  "order_address": "Tuzla Istanbul Turkey",
+  "order_address_type": "Home",
+  "order_address_name": "Home",
   "payment_status": "pending",
   "invoice_link": null,
   "order_status": 0,
@@ -53,6 +60,9 @@ if __name__ == "__main__":
   "customer_id": "734c8a28-917e-11ef-8816-dd891ae32718",
   "total_price": 46,
   "order_date": "2024-03-01",
+  "order_address": "Sabanci Istanbul Turkey",
+  "order_address_type": "Work",
+  "order_address_name": "Work",
   "payment_status": "pending",
   "invoice_link": null,
   "order_status": 0,
@@ -69,6 +79,5 @@ if __name__ == "__main__":
     }
   ]
 }
-
 
 """
