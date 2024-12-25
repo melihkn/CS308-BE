@@ -46,7 +46,32 @@ class ProductService:
             "parent_category_id": category.parentcategory_id
         }
 
+    # ONLY 1 LEVEL DEPTH CATEGORIES ARE SUPPORTED
 
+    # return the categories which have no parent category
+    def get_root_categories(self) -> List[CategoryDB]:
+        return self.db.query(CategoryDB).filter(CategoryDB.parentcategory_id == None).all()
+    
+    # return the categories which have the specified parent category
+    def get_categories_by_parent_id(self, parent_id: str) -> List[CategoryDB]:
+        return self.db.query(CategoryDB).filter(CategoryDB.parentcategory_id == parent_id).all()
+
+    # root category girilirse subcategorilerindeki ürünler de dönülsün - detailed "/getproduct/category/{category_id}"
+    def get_products_by_category_id(self, category_id: str) -> List[ProductDB]:
+        # when items from root category is wanted, we return all the products in the subcategories of that root category
+        
+        # if the category is a root category
+        if self.db.query(CategoryDB).filter(CategoryDB.category_id == category_id).first().parentcategory_id == None:
+            # get all the subcategories of the root category
+            subcategories = self.get_categories_by_parent_id(category_id)
+            # get all the products in the subcategories
+            products = []
+            for subcategory in subcategories:
+                products += self.db.query(ProductDB).filter(ProductDB.category_id == subcategory.category_id).all()
+            return products
+        # if the category is not a root category
+        else:
+            return self.db.query(ProductDB).filter(ProductDB.category_id == category_id).all()
 
     def get_all_products(self) -> List[ProductDB]:
         return self.db.query(ProductDB).all()

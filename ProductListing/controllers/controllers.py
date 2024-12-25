@@ -58,7 +58,27 @@ async def get_products_sorted_by_price(
     
     return service.get_products_sorted_by_price(order)
 
+# TUNAHAN - yeni eklenen path ler
 
+# return the categories which have no parent category
+@router.get("/categories/root", response_model=List[CategoriesSchema])
+async def get_root_categories(db: Session = Depends(get_db)):
+    service = ProductService(db)
+    return service.get_root_categories()
+
+# return the categories which have the specified parent category
+@router.get("/categories/parent/{parent_id}", response_model=List[CategoriesSchema])
+async def get_categories_by_parent_id(parent_id: int, db: Session = Depends(get_db)):
+    service = ProductService(db)
+    return service.get_categories_by_parent_id(parent_id)
+
+# root category girilirse subcategorilerindeki ürünler de dönülsün - detailed "/getproduct/category/{category_id}"
+@router.get("/getproduct/category/detailed/{category_id}", response_model=List[Product])
+async def get_products_by_category_id(category_id: int, db: Session = Depends(get_db)):
+    service = ProductService(db)
+    return service.get_products_by_category_id(category_id)
+
+# ---
 
 @router.get("/popular", response_model=List[Product])
 def get_products_sorted_by_popularity(db: Session = Depends(get_db)):
