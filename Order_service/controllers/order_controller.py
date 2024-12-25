@@ -5,7 +5,9 @@ from typing import List
 from models.models import (
     OrderCreateSchema,
     OrderResponseSchema,
-    OrderStatusUpdateSchema
+    OrderStatusUpdateSchema,
+    Address,
+    Delivery
 )
 from services.order_service import OrderService
 from utils.db_utils import get_db
@@ -14,11 +16,45 @@ router = APIRouter()
 
 
 """
+OrderCreate schema:
+class OrderCreateSchema(BaseModel):
+    order_id: str
+    customer_id: str
+    total_price: float
+    order_date: str
+    order_address : str
+    order_address_type: str #Home, work etc.
+    order_address_name: Optional[str]
+    payment_status: str
+    invoice_link: Optional[str]
+    order_status: int
+    items: List[OrderItemResponseSchema]
+
+OrderResponse schema:
+class OrderResponseSchema(BaseModel):
+    order_id: str
+    customer_id: str
+    total_price: float
+    order_date: str
+    order_address : Optional[str]
+    order_address_type: Optional[str]
+    order_address_name: Optional[str]
+    payment_status: str
+    invoice_link: Optional[str]
+    order_status: int
+    items: List[OrderItemResponseSchema]
+
+"""
+
+"""
 input is sth like:
 {
     "customer_id": "c1",
     "total_price": 100.0,
     "order_date": "2021-10-10",
+    "order_adress": "Tuzla Istanbul Turkey",
+    "order_adress_type": "Home",
+    "order_address_name": "Home",
     "payment_status": "paid",
     "invoice_link": "http://invoice.com",
     "order_status": 0,
@@ -42,6 +78,9 @@ output is sth like:
     "customer_id": "c1",
     "total_price": 100.0,
     "order_date": "2021-10-10 00:00:00",
+    "order_address": "Tuzla Istanbul Turkey",
+    "order_address_type": "Home",
+    "order_address_name": "Home",
     "payment_status": "paid",
     "invoice_link": "http://invoice.com",
     "order_status": 0,
@@ -63,33 +102,35 @@ output is sth like:
 @router.post("/create", response_model=OrderResponseSchema)
 async def create_order(order: OrderCreateSchema, db: Session = Depends(get_db)):
     try:
-        """
-        new_order = OrderService.create_order(order, db)       
-        # Convert the response to match the schema
-        return OrderResponseSchema(
-            order_id=new_order.order_id,
-            customer_id=new_order.customer_id,
-            total_price=new_order.total_price,
-            order_date=new_order.order_date.strftime("%Y-%m-%d %H:%M:%S"),
-            payment_status=new_order.payment_status,
-            invoice_link=new_order.invoice_link,
-            order_status=new_order.order_status,
-            items=[
-                {
-                    "product_id": item.product_id,
-                    "quantity": item.quantity,
-                    "price": item.price_at_purchase,
-                }
-                for item in new_order.order_items
-            ]
-        )
-        """
+        # for debugging: print(order)
+        # Create the order
         new_order = OrderService.create_order(order, db)
+
+        # find the related delivery object using the order_id column in the delivery table
+        delivery = db.query(Delivery).filter(Delivery.order_id == new_order.order_id).first()
+
+        #if not delivery:
+            #raise HTTPException(status_code=404, detail="Delivery not found for the order")
+
+        address = None
+        # for the previously added order with no delivery and address, return None for the address fields
+        if not delivery:
+            address = None
+        else:
+            address = db.query(Address).filter(Address.customer_adres_id == delivery.addres_id).first()
+
+        # find the related address object using the addres_id column in the delivery table
+        address = db.query(Address).filter(Address.customer_adres_id == delivery.addres_id).first()
+
+        # then, create the order response schema using the fields of address object
         return OrderResponseSchema(
             order_id=new_order.order_id,
             customer_id=new_order.customer_id,
             total_price=new_order.total_price,
             order_date=new_order.order_date.strftime("%Y-%m-%d %H:%M:%S"),
+            order_address= address.address if address else None,
+            order_address_type= address.type if address else None,
+            order_address_name= address.name if address else None,
             payment_status=new_order.payment_status,
             invoice_link=new_order.invoice_link,  # Include the invoice link in the response
             order_status=new_order.order_status,
@@ -107,7 +148,6 @@ async def create_order(order: OrderCreateSchema, db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
 """
 input is order_id
 output is the order with the given order_id in the following format:
@@ -116,6 +156,9 @@ output is the order with the given order_id in the following format:
     "customer_id": "c1",
     "total_price": 100.0,
     "order_date": "2021-10-10 00:00:00",
+    "order_address": "Tuzla Istanbul Turkey",
+    "order_address_type": "Home",
+    "order_address_name": "Home",
     "payment_status": "paid",
     "invoice_link": "http://invoice.com",
     "order_status": 0,
@@ -140,12 +183,22 @@ async def get_order(order_id: str, db: Session = Depends(get_db)):
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     
-    # Convert order to response schema
-    return OrderResponseSchema(
+    # find the related delivery object using the order_id column in the delivery table
+    delivery = db.query(Delivery).filter(Delivery.order_id == order.order_id).first()
+
+    address = None # for the previously added order with no delivery and address, return None for the address fields
+    if delivery:
+        # find the related address object using the addres_id column in the delivery table
+        address = db.query(Address).filter(Address.customer_adres_id == delivery.addres_id).first()
+
+    order_in_response_format = OrderResponseSchema(
         order_id=order.order_id,
         customer_id=order.customer_id,
         total_price=order.total_price,
         order_date=order.order_date.strftime("%Y-%m-%d %H:%M:%S"),
+        order_address= address.address if address else None,
+        order_address_name= address.name if address else None,
+        order_address_type= address.type if address else None,
         payment_status=order.payment_status,
         invoice_link=order.invoice_link,
         order_status=order.order_status,
@@ -158,6 +211,8 @@ async def get_order(order_id: str, db: Session = Depends(get_db)):
             for item in order.order_items
         ]
     )
+    return order_in_response_format
+
 
 """
 Returns all orders for a given customer.
@@ -170,6 +225,9 @@ output is a list of orders in the following format:
         "customer_id": "c1",
         "total_price": 100.0,
         "order_date": "2021-10-10 00:00:00",
+        "order_address": "Tuzla Istanbul Turkey",
+        "order_address_type": "Home",
+        "order_address_name": "Home",
         "payment_status": "paid",
         "invoice_link": "http://invoice.com",
         "order_status": 0,
@@ -194,12 +252,36 @@ output is a list of orders in the following format:
 async def list_orders_for_customer(customer_id: str, db: Session = Depends(get_db)):
     try:
         orders = OrderService.list_orders_for_customer(customer_id, db)
-        return [
-            OrderResponseSchema(
+
+        orders_in_correct_format = []
+
+        if not orders:
+            raise HTTPException(status_code=404, detail="No orders found for the customer")
+
+        for order in orders:
+
+            # find the related delivery object using the order_id column in the delivery table
+            delivery = db.query(Delivery).filter(Delivery.order_id == order.order_id).first()
+
+            #if not delivery:
+                #raise HTTPException(status_code=404, detail="Delivery not found for the order with the id: " + order.order_id)
+            
+            address = None
+            # for the previously added order with no delivery and address, return None for the address fields
+            if not delivery:
+                address = None
+            else:
+                # find the related address object using the addres_id column in the delivery table
+                address = db.query(Address).filter(Address.customer_adres_id == delivery.addres_id).first()
+
+            current_order_in_correct_format = OrderResponseSchema(
                 order_id=order.order_id,
                 customer_id=order.customer_id,
                 total_price=order.total_price,
                 order_date=order.order_date.strftime("%Y-%m-%d %H:%M:%S"),
+                order_address = address.address if address else None,
+                order_address_type= address.type if address else None,
+                order_address_name= address.name if address else None,
                 payment_status=order.payment_status,
                 invoice_link=order.invoice_link,
                 order_status=order.order_status,
@@ -212,10 +294,12 @@ async def list_orders_for_customer(customer_id: str, db: Session = Depends(get_d
                     for item in order.order_items
                 ]
             )
-            for order in orders
-        ]
+            orders_in_correct_format.append(current_order_in_correct_format)
+        
+        return orders_in_correct_format
+    
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) 
 
 """
 input is sth like:
