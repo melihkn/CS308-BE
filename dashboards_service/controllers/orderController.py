@@ -7,7 +7,7 @@ from dependencies import verify_pm_role, oauth2_scheme
 from services.orderService import OrderService
 
 
-router = APIRouter('/orders')
+router = APIRouter(prefix='/orders')
 
 
 @router.get('/', response_model=List[OrderResponseSchema], dependencies=[Depends(verify_pm_role)])
