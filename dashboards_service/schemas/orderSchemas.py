@@ -6,10 +6,12 @@ class ProductResponseSchema(BaseModel):
     product_name: str
     quantity: int
     price_at_purchase: float
+    image_url: str
 
 class OrderResponseSchema(BaseModel):
-    delivery_id: str
+    id: str
     order_id: str
+    customer_id: str
     price: float
     address: str
     status: int
@@ -18,5 +20,5 @@ class OrderResponseSchema(BaseModel):
 
 class OrderUpdateSchema(BaseModel):
     order_id: str
-    status: Optional[int] = None
+    status: int
 

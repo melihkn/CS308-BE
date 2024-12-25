@@ -5,8 +5,18 @@ from models.models import Order, OrderItem, Delivery, Address, Customer, Product
 from schemas.orderSchemas import OrderResponseSchema, ProductResponseSchema, OrderUpdateSchema
 
 
+status_map = {
+    0: 'PENDING',
+    1: 'PROCESSING',
+    2: 'SHIPPED',
+    3: 'APPROVED',
+    4: 'CANCELLED',
+}
+
 
 class OrderService:
+
+
 
     @staticmethod
     def get_orders(db: Session) -> List[OrderResponseSchema]:
@@ -26,45 +36,54 @@ class OrderService:
                     product_id = product.product_id,
                     product_name = product.name,
                     quantity = item.quantity,
-                    price_at_purchase = item.price_at_purchase
+                    price_at_purchase = item.price_at_purchase,
+                    image_url = product.image_url
                 ))
 
-            delivery = db.query(Delivery).filter(Delivery.delivery_id == order.delivery_id).first()
-            address = db.query(Address).filter(Address.address_id == delivery.address_id).first()
-            customer = db.query(Customer).filter(Customer.customer_id == order.customer_id).first()
+            delivery = db.query(Delivery).filter(Delivery.order_id == order.order_id).first()
+            address = None
+            if delivery:
+                address = db.query(Address).filter(Address.customer_adres_id == delivery.addres_id).first()
+            customer = db.query(Customer).filter(Customer.user_id == order.customer_id).first()
 
             response.append(OrderResponseSchema(
-                delivery_id = delivery.delivery_id,
+                id = delivery.delivery_id,
                 order_id = order.order_id,
-                customer_id = customer.customer_id,
+                customer_id = customer.user_id,
                 price = order.total_price,
                 address = address.address,
                 status = order.order_status,
                 products = products
             ))
 
+        print(response)
 
         return response
     
     @staticmethod
     def update_order(db: Session, update : OrderUpdateSchema):
-        order = db.query(Order).filter(Order.order_id == order.order_id).first()
+        order = db.query(Order).filter(Order.order_id == update.order_id).first()
+
+        print(order)
 
         if order is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Order not found"
             )
-        
 
         if update.status is not None:
             order.order_status = update.status
 
-        if order.price is not None:
-            order.total_price = update.price
+        delivery = db.query(Delivery).filter(Delivery.order_id == order.order_id).first()
 
-        if order.address is not None:
-            order.address = update.address
+        if delivery is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Delivery not found"
+            )
+        
+        delivery.delivery_status = status_map[update.status]
 
         db.commit()
         db.refresh(order)

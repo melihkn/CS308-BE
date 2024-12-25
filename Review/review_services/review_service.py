@@ -68,9 +68,9 @@ def get_all_reviews_for_certain_product(db: Session, requested_review: Get_Revie
 
 
 def calculate_average_rating(db: Session, product_id: str):
-    reviews = db.query(Review).filter(Review.product_id == product_id,
-                                      Review.approval_status == "APPROVED"
-                                      ).all()
+    reviews = db.query(Review).filter(and_(Review.product_id == product_id, Review.approval_status == "APPROVED")).all()
+
+    print(reviews)
     
     if len(reviews) == 0:
         return 0

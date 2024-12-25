@@ -4,7 +4,7 @@ import uuid
 from sqlalchemy.orm import Session
 from typing import List
 from schemas.refund_cancel_schemas import CancelRequestSchema, CancelResponseSchema, RefundRequestSchema, RefundResponseSchema, RefundSchema
-from models.models import Customer, OrderItem, Order, Refund
+from models.models import Customer, Delivery, OrderItem, Order, Refund
 from utils.db_utils import get_db
 from utils.order_settings import settings
 from fastapi import HTTPException
@@ -186,6 +186,10 @@ def cancel_order_service(cancel_request: CancelRequestSchema, db: Session, token
             raise HTTPException(status_code=400, detail="Cannot cancel refunded order")
         
         order.order_status = 4
+
+        delivery = db.query(Delivery).filter(Delivery.order_id == order.order_id).first()
+
+        delivery.delivery_status = "CANCELLED"
 
         db.commit()
 
