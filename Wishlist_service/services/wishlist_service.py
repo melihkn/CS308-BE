@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from models import Wishlist
+from models.models import Wishlist
 from schemas import WishlistCreate
 
 class WishlistService:

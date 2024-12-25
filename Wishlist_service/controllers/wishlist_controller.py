@@ -1,12 +1,13 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from dbContext import get_db
-from models import Wishlist
+from models.models import Wishlist
 from schemas import WishlistCreate, WishlistResponse
 from services.wishlist_service import WishlistService
 
 router = APIRouter()
 wishlist_service = WishlistService()
+
 
 
 """

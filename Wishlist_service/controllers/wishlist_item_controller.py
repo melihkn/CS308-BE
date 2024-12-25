@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from dbContext import get_db
-from models import WishlistItem
+from models.models import WishlistItem
 from schemas import WishlistItemCreate, WishlistItemResponse
 from services.wishlist_item_service import WishlistItemService
 
