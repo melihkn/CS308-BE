@@ -161,7 +161,6 @@ class Review(Base):
     product_id = Column(CHAR(36), ForeignKey('products.product_id'))
     rating = Column(Integer, nullable=False)
     comment = Column(Text)
-    pm_id = Column(CHAR(36), ForeignKey('product_managers.pm_id'))
     approval_status = Column(String(50), nullable=False)
 
 # Shopping Cart Table
