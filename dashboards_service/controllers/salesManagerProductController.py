@@ -22,6 +22,7 @@ class ProductCreate(BaseModel):
     warranty_status: Optional[int] = None
     distributor: Optional[str] = None
     price: Decimal = Field(default=0.00)
+    cost: Decimal = Field(default=0.00)
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
