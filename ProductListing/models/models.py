@@ -27,9 +27,60 @@ class ProductDB(Base):
     cost = Column(DECIMAL, nullable=False)   
     # Relationship to reviews
     reviews = relationship("ReviewDB", back_populates="product")
+    discounts = relationship("Discount", back_populates="product")
 
     def __repr__(self):
         return f"<Product(name={self.name}, model={self.model}, quantity={self.quantity})>"
+    
+class Discount(Base):
+    __tablename__ = "discount"
+
+    discount_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    product_id = Column(String(36), ForeignKey("products.product_id", ondelete="CASCADE"), nullable=True)
+    discount_rate = Column(DECIMAL(5, 2), nullable=False)
+    start_date = Column(DateTime, nullable=False)
+    end_date = Column(DateTime, nullable=False)
+    is_active = Column(Integer, nullable=False, default=1)
+
+    product = relationship("ProductDB", back_populates="discounts")
+
+class ProductSchema(BaseModel):
+    product_id: str
+    name: str
+    model: str
+    description: Optional[str]
+    serial_number: str
+    category_id: Optional[int]
+    quantity: int
+    price: float
+    distributor: Optional[str]
+    image_url: Optional[str]
+    item_sold: int
+    warranty_status: Optional[int]
+    cost: float
+    
+    class Config:
+        orm_mode = True
+
+class ProductDiscountSchema(BaseModel):
+    product_id: str
+    name: str
+    model: str
+    description: Optional[str]
+    serial_number: Optional[str] = None
+    category_id: Optional[int] = None
+    quantity: int
+    price: float
+    distributor: Optional[str] = None
+    image_url: Optional[str] = None
+    item_sold: Optional[int] = 0
+    warranty_status: Optional[int] = None
+    cost: Optional[float] = 0.0
+    discount_rate: float
+
+    class Config:
+        orm_mode = True
+
 
 # SQLAlchemy Model for Reviews
 class ReviewDB(Base):

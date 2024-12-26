@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from models.models import ProductDB, ProductCreate, ProductUpdate, ReviewDB, ProductPopularity, CategoryDB 
+from models.models import ProductDB, ProductCreate, ProductUpdate, ReviewDB, ProductPopularity, CategoryDB , Discount, ProductDiscountSchema
 from typing import List, Optional
 import uuid
 from fastapi import Path
@@ -198,6 +198,52 @@ class ProductService:
         # Convert results to a list of dictionaries to return as JSON
         return results
 
+    def get_discounted_products(self):
+        current_date = datetime.now().date()
+        discounted_products = (
+            self.db.query(
+                ProductDB.product_id,
+                ProductDB.name,
+                ProductDB.model,
+                ProductDB.description,
+                ProductDB.serial_number,
+                ProductDB.category_id,
+                ProductDB.quantity,
+                ProductDB.price,
+                ProductDB.distributor,
+                ProductDB.image_url,
+                ProductDB.item_sold,
+                ProductDB.warranty_status,
+                ProductDB.cost,
+                Discount.discount_rate,
+            )
+            .join(Discount, ProductDB.product_id == Discount.product_id)
+            .filter(Discount.is_active == 1,
+            Discount.start_date <= current_date,
+            Discount.end_date >= current_date)
+            .order_by(Discount.discount_rate.desc())
+            .all()
+        )
+
+        return [
+            ProductDiscountSchema(
+                product_id=product.product_id,
+                name=product.name,
+                model=product.model,
+                description=product.description,
+                serial_number=product.serial_number,
+                category_id=product.category_id,
+                quantity=product.quantity,
+                price=product.price,
+                distributor=product.distributor,
+                image_url=product.image_url,
+                item_sold=product.item_sold,
+                warranty_status=product.warranty_status,
+                cost=product.cost,
+                discount_rate=product.discount_rate,
+            )
+            for product in discounted_products
+        ]
 
     
 
