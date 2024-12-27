@@ -230,7 +230,7 @@ class ProductService:
                 Discount.end_date,
             )
             .join(Discount, ProductDB.product_id == Discount.product_id)
-            .filter(Discount.is_active == 1)
+            .filter(Discount.is_active == 1, ProductDB.quantity > 0)
             .order_by(*order_criteria)
             .all()
         )
