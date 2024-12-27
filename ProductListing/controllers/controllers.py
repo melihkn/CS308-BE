@@ -169,13 +169,10 @@ async def get_products_by_category(
         print(f"Error: {e}")
         raise HTTPException(status_code=500, detail="Server Error")
 
-@router.get("/discounted", response_model=List[ProductDiscountSchema])
+@router.get("/products/discounted", response_model=List[ProductDiscountSchema])
 async def get_discounted_products(
     db: Session = Depends(get_db)
 ):
-    """
-    Fetch discounted products sorted by discount rate.
-    :param order: Sorting order (asc or desc)
-    """
+    
     service = ProductService(db)
     return service.get_discounted_products()

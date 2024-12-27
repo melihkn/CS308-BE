@@ -16,18 +16,19 @@ class ProductDB(Base):
     name = Column(String(100), nullable=False)
     model = Column(String(50), nullable=False)
     description = Column(Text, nullable=True)
-    category_id = Column(Integer, ForeignKey('category.category_id', ondelete="SET NULL"), nullable=True)
     serial_number = Column(String(100), unique=True, nullable=False)
+    category_id = Column(Integer, ForeignKey('category.category_id', ondelete="SET NULL"), nullable=True)
     quantity = Column(Integer, nullable=False, default=0)
-    item_sold = Column(Integer, nullable=False, default=0)  # Track total quantity sold
-    warranty_status = Column(Integer, nullable=True)
+    price = Column(DECIMAL, nullable=False)   # Track total quantity sold
     distributor = Column(String(100), nullable=True) 
     image_url = Column(String(255), nullable=True)
-    price = Column(DECIMAL, nullable=False)  
+    item_sold = Column(Integer, nullable=False, default=0) 
+    warranty_status = Column(Integer, nullable=True)
     cost = Column(DECIMAL, nullable=False)   
     # Relationship to reviews
-    reviews = relationship("ReviewDB", back_populates="product")
     discounts = relationship("Discount", back_populates="product")
+    reviews = relationship("ReviewDB", back_populates="product")
+    
 
     def __repr__(self):
         return f"<Product(name={self.name}, model={self.model}, quantity={self.quantity})>"
@@ -60,13 +61,13 @@ class ProductSchema(BaseModel):
     cost: float
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class ProductDiscountSchema(BaseModel):
     product_id: str
     name: str
     model: str
-    description: Optional[str]
+    description: Optional[str] = None
     serial_number: Optional[str] = None
     category_id: Optional[int] = None
     quantity: int
@@ -79,7 +80,7 @@ class ProductDiscountSchema(BaseModel):
     discount_rate: float
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 # SQLAlchemy Model for Reviews
@@ -121,7 +122,7 @@ class Product(BaseModel):
     category_id: Optional[int] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 

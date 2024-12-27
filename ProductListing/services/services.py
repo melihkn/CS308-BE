@@ -199,7 +199,6 @@ class ProductService:
         return results
 
     def get_discounted_products(self):
-        current_date = datetime.now().date()
         discounted_products = (
             self.db.query(
                 ProductDB.product_id,
@@ -218,9 +217,7 @@ class ProductService:
                 Discount.discount_rate,
             )
             .join(Discount, ProductDB.product_id == Discount.product_id)
-            .filter(Discount.is_active == 1,
-            Discount.start_date <= current_date,
-            Discount.end_date >= current_date)
+            .filter(Discount.is_active == 1)
             .order_by(Discount.discount_rate.desc())
             .all()
         )
@@ -244,9 +241,3 @@ class ProductService:
             )
             for product in discounted_products
         ]
-
-    
-
-
-
-    
