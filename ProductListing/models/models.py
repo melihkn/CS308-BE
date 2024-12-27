@@ -78,6 +78,7 @@ class ProductDiscountSchema(BaseModel):
     warranty_status: Optional[int] = None
     cost: Optional[float] = 0.0
     discount_rate: float
+    end_date: datetime
 
     class Config:
         from_attributes = True
@@ -85,7 +86,7 @@ class ProductDiscountSchema(BaseModel):
 
 # SQLAlchemy Model for Reviews
 class ReviewDB(Base):
-    __tablename__ = 'reviews'
+    __tablename__ = 'review'
 
     review_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     customer_id = Column(String(36), nullable=False)

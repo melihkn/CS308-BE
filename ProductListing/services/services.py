@@ -198,7 +198,19 @@ class ProductService:
         # Convert results to a list of dictionaries to return as JSON
         return results
 
-    def get_discounted_products(self):
+
+    def get_discounted_products(self, sort_by: str = "rate") -> List[ProductDiscountSchema]:
+        """
+        Get discounted products sorted by discount rate or discount end date.
+
+        :param sort_by: "rate" to sort by discount rate, "end_date" to sort by discount end date
+        :return: List of discounted products
+        """
+        if sort_by == "end_date":
+            order_criteria = [Discount.end_date.asc(), Discount.discount_rate.desc()]
+        else:
+            order_criteria = [Discount.discount_rate.desc(), Discount.end_date.asc()]
+
         discounted_products = (
             self.db.query(
                 ProductDB.product_id,
@@ -215,10 +227,11 @@ class ProductService:
                 ProductDB.warranty_status,
                 ProductDB.cost,
                 Discount.discount_rate,
+                Discount.end_date,
             )
             .join(Discount, ProductDB.product_id == Discount.product_id)
             .filter(Discount.is_active == 1)
-            .order_by(Discount.discount_rate.desc())
+            .order_by(*order_criteria)
             .all()
         )
 
@@ -238,6 +251,7 @@ class ProductService:
                 warranty_status=product.warranty_status,
                 cost=product.cost,
                 discount_rate=product.discount_rate,
+                end_date=product.end_date,
             )
             for product in discounted_products
         ]

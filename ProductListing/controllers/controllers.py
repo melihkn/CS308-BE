@@ -169,10 +169,19 @@ async def get_products_by_category(
         print(f"Error: {e}")
         raise HTTPException(status_code=500, detail="Server Error")
 
-@router.get("/products/discounted", response_model=List[ProductDiscountSchema])
-async def get_discounted_products(
-    db: Session = Depends(get_db)
-):
-    
+@router.get("/products/discounted-by-rate", response_model=List[ProductDiscountSchema])
+async def get_discounted_products_by_rate(db: Session = Depends(get_db)):
+    """
+    Get discounted products sorted by discount rate.
+    """
     service = ProductService(db)
-    return service.get_discounted_products()
+    return service.get_discounted_products(sort_by="rate")
+
+
+@router.get("/products/discounted-by-end-date", response_model=List[ProductDiscountSchema])
+async def get_discounted_products_by_end_date(db: Session = Depends(get_db)):
+    """
+    Get discounted products sorted by discount end date.
+    """
+    service = ProductService(db)
+    return service.get_discounted_products(sort_by="end_date")
