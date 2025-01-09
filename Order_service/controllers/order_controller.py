@@ -11,6 +11,8 @@ from models.models import (
 )
 from services.order_service import OrderService
 from utils.db_utils import get_db
+from utils.authentication_utils import verify_user_role, oauth2_scheme
+from fastapi.security import OAuth2PasswordBearer
 
 router = APIRouter()
 
@@ -99,8 +101,8 @@ output is sth like:
     ]
 }
 """
-@router.post("/create", response_model=OrderResponseSchema)
-async def create_order(order: OrderCreateSchema, db: Session = Depends(get_db)):
+@router.post("/create", response_model=OrderResponseSchema, dependencies=[Depends(verify_user_role)])
+async def create_order(order: OrderCreateSchema, db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
     try:
         # for debugging: print(order)
         # Create the order
@@ -177,8 +179,8 @@ output is the order with the given order_id in the following format:
     ]
 }
 """
-@router.get("/{order_id}", response_model=OrderResponseSchema)
-async def get_order(order_id: str, db: Session = Depends(get_db)):
+@router.get("/{order_id}", response_model=OrderResponseSchema, dependencies=[Depends(verify_user_role)])
+async def get_order(order_id: str, db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
     order = OrderService.get_order(order_id, db)
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
@@ -248,8 +250,8 @@ output is a list of orders in the following format:
     ...
 ]
 """
-@router.get("/customer/{customer_id}", response_model=List[OrderResponseSchema])
-async def list_orders_for_customer(customer_id: str, db: Session = Depends(get_db)):
+@router.get("/customer/{customer_id}", response_model=List[OrderResponseSchema], dependencies=[Depends(verify_user_role)])
+async def list_orders_for_customer(customer_id: str, db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
     try:
         orders = OrderService.list_orders_for_customer(customer_id, db)
 
@@ -313,8 +315,8 @@ output is sth like:
     "order_status": 1 -> it returns the updated status of the order in the string format
 }
 """
-@router.patch("/{order_id}/status", response_model=dict)
-async def update_order_status(order_id: str, status_update: OrderStatusUpdateSchema, db: Session = Depends(get_db)):
+@router.patch("/{order_id}/status", response_model=dict, dependencies=[Depends(verify_user_role)])
+async def update_order_status(order_id: str, status_update: OrderStatusUpdateSchema, db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
     try:
         updated_status = OrderService.update_order_status(order_id, status_update.status, db)
         if not updated_status:
