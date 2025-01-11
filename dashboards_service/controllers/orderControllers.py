@@ -11,7 +11,7 @@ from typing import Optional, List
 from decimal import Decimal
 import uuid
 
-
+from dependencies import verify_sm_role
 
 router = APIRouter()
 
@@ -38,19 +38,19 @@ class OrderItemCreate(BaseModel):
 
 
 
-@router.get("/orders", response_model=List[OrderCreate])
+@router.get("/orders", response_model=List[OrderCreate],dependencies=[Depends(verify_sm_role)])
 def read_orders(db: Session = Depends(get_db)):
     return get_orders(db)
 
-@router.post("/orders", response_model=OrderCreate)
+@router.post("/orders", response_model=OrderCreate,dependencies=[Depends(verify_sm_role)])
 def create_order(order: OrderCreate, db: Session = Depends(get_db)):
     return create_order_service(db, order)
 
 
-@router.get("/orderItems", response_model = List[OrderItemCreate])
+@router.get("/orderItems", response_model = List[OrderItemCreate],dependencies=[Depends(verify_sm_role)])
 def read_orderItems(db: Session = Depends(get_db)):
     return get_orderItems(db)
 
-@router.post("/orderItems", response_model = OrderItemCreate)
+@router.post("/orderItems", response_model = OrderItemCreate,dependencies=[Depends(verify_sm_role)])
 def create_orderItem(orderItem: OrderItemCreate, db: Session = Depends(get_db)):
     return create_orderItem_service(db, orderItem)

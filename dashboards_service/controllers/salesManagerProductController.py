@@ -8,7 +8,7 @@ from typing import List
 from datetime import datetime
 from typing import Optional
 from decimal import Decimal
-
+from dependencies import verify_sm_role, oauth2_scheme
 
 class ProductCreate(BaseModel):
     name: str
@@ -35,12 +35,12 @@ class SetPriceRequest(BaseModel):
 
 router = APIRouter()
 
-@router.get("/products", response_model=List[ProductRead])
-def read_discounts(db: Session = Depends(get_db)):
+@router.get("/products", response_model=List[ProductRead],dependencies=[Depends(verify_sm_role)])
+def read_discounts(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
     return get_products(db)
 
-@router.patch("/products/{product_id}/set-price", response_model=ProductRead)
-def set_product_price_endpoint(product_id: str, price_data: SetPriceRequest, db: Session = Depends(get_db)):
+@router.patch("/products/{product_id}/set-price", response_model=ProductRead,dependencies=[Depends(verify_sm_role)])
+def set_product_price_endpoint(product_id: str, price_data: SetPriceRequest, db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
     product = set_product_price(db, product_id, price_data.price)
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")

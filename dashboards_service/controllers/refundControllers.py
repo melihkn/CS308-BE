@@ -35,24 +35,24 @@ class RefundStatusUpdateSchema(BaseModel):
 
 #dependencies=[Depends(verify_sm_role)]
 #token: str = Depends(oauth2_scheme)
-@router.get("/", response_model=List[RefundReadSchema])
-def get_all_refunds_controller(db: Session = Depends(get_db)):
+@router.get("/", response_model=List[RefundReadSchema],dependencies=[Depends(verify_sm_role)])
+def get_all_refunds_controller(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
     refunds = get_refunds(db)
     if not refunds:
         raise HTTPException(status_code=404, detail="No refunds found")
     return refunds
 
 # GET: Belirli bir Refund ID ile Refund Getir
-@router.get("/{refund_id}", response_model=RefundReadSchema)
-def get_refund_by_id_controller(refund_id: str, db: Session = Depends(get_db)):
+@router.get("/{refund_id}", response_model=RefundReadSchema,dependencies=[Depends(verify_sm_role)])
+def get_refund_by_id_controller(refund_id: str, db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
     refund = get_refundById(db, refund_id)
     if not refund:
         raise HTTPException(status_code=404, detail=f"Refund with ID {refund_id} not found")
     return refund
 
 
-@router.put("/{refund_id}/Approved", response_model=RefundReadSchema)
-def approve_refund(refund_id: str, db: Session = Depends(get_db)):
+@router.put("/{refund_id}/Approved", response_model=RefundReadSchema,dependencies=[Depends(verify_sm_role)])
+def approve_refund(refund_id: str, db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
     """Refund statusunu 'Approved' olarak güncelle."""
     # RefundStatusUpdateSchema kullanılarak body oluşturuluyor
     refund_data = RefundStatusUpdateSchema(status="Approved")
@@ -62,8 +62,8 @@ def approve_refund(refund_id: str, db: Session = Depends(get_db)):
     return refund
 
 
-@router.put("/{refund_id}/Rejected", response_model=RefundReadSchema)
-def reject_refund(refund_id: str, db: Session = Depends(get_db)):
+@router.put("/{refund_id}/Rejected", response_model=RefundReadSchema,dependencies=[Depends(verify_sm_role)])
+def reject_refund(refund_id: str, db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
     """Refund statusunu 'Declined' olarak güncelle."""
     # RefundStatusUpdateSchema kullanılarak body oluşturuluyor
     refund_data = RefundStatusUpdateSchema(status="Declined")
