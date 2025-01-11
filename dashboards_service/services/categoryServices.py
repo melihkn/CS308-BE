@@ -15,7 +15,7 @@ def get_categories(db: Session):
 def get_category(db: Session, category_id: int):
     return db.query(Category).filter(Category.category_id == category_id).first()
 
-def update_category(db: Session, category_id: int, category: CategoryCreate):
+def update_category_(db: Session, category_id: int, category: CategoryCreate):
     category_ = db.query(Category).filter(Category.category_id == category_id).first()
 
     for key, value in category.dict().items():

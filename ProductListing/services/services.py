@@ -1,11 +1,25 @@
 from sqlalchemy.orm import Session
-from models.models import ProductDB, ProductCreate, ProductUpdate, ReviewDB, ProductPopularity, CategoryDB 
+from models.models import Product, ProductDB, ProductCreate, ReviewDB, ProductUpdate, ReviewDB, ProductPopularity, CategoryDB 
+
+from models.models import ProductDB, ProductCreate, ProductUpdate, ReviewDB, ProductPopularity, CategoryDB , Discount, ProductDiscountSchema
+
 from typing import List, Optional
 import uuid
 from fastapi import Path
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime
 from sqlalchemy import func, desc, asc, text
+from pydantic import BaseModel
+from typing import Optional
+
+from sqlalchemy import and_, or_
+# Filter Parameters Model
+class ProductFilterParams(BaseModel):
+    sub_category: Optional[int] = None
+    price_min: Optional[float] = None
+    price_max: Optional[float] = None
+    rating_min: Optional[float] = None
+    warranty_status: Optional[int] = None
 
 
 class ProductService:
@@ -46,10 +60,103 @@ class ProductService:
             "parent_category_id": category.parentcategory_id
         }
 
+     # ONLY 1 LEVEL DEPTH CATEGORIES ARE SUPPORTED
+
+    # return the categories which have no parent category
+    def get_root_categories(self) -> List[CategoryDB]:
+        return self.db.query(CategoryDB).filter(CategoryDB.parentcategory_id == None).all()
+    
+    # return the categories which have the specified parent category
+    def get_categories_by_parent_id(self, parent_id: str) -> List[CategoryDB]:
+        return self.db.query(CategoryDB).filter(CategoryDB.parentcategory_id == parent_id).all()
+
+    # root category girilirse subcategorilerindeki ürünler de dönülsün - detailed "/getproduct/category/{category_id}"
+    def get_products_by_category_id(self, category_id: int) -> List[Product]:
+        # when items from root category is wanted, we return all the products in the subcategories of that root category
+        
+        # if the category is a root category
+        if self.db.query(CategoryDB).filter(CategoryDB.category_id == category_id).first().parentcategory_id == None:
+            # get all the subcategories of the root category
+            subcategories = self.get_categories_by_parent_id(category_id)
+            # get all the products in the subcategories
+            products = []
+            products += self.db.query(ProductDB).filter(ProductDB.category_id == category_id).all()
+            for subcategory in subcategories:
+                products += self.db.query(ProductDB).filter(ProductDB.category_id == subcategory.category_id).all()
+
+            result = []
+
+            for product in products:
+                reviews = self.db.query(ReviewDB).filter(and_(ReviewDB.product_id == product.product_id, ReviewDB.approval_status == "APPROVED")).all()
+
+                average_rating = 0
+                
+                if len(reviews) == 0:
+                    average_rating = 0
+                else:
+                    for i in reviews:
+                        average_rating += i.rating
+                    average_rating = average_rating/len(reviews)
 
 
-    def get_all_products(self) -> List[ProductDB]:
-        return self.db.query(ProductDB).all()
+                result.append(Product(
+                    product_id=product.product_id,
+                    name=product.name,
+                    model=product.model,
+                    description=product.description,
+                    quantity=product.quantity,
+                    warranty_status=product.warranty_status,
+                    distributor=product.distributor,
+                    image_url=product.image_url,
+                    item_sold=product.item_sold,
+                    price=product.price,
+                    cost=product.cost,
+                    category_id=product.category_id,
+                    average_rating=average_rating
+                    ))
+            return result
+        # if the category is not a root category
+        else:
+            return self.db.query(ProductDB).filter(ProductDB.category_id == category_id).all()
+
+    def get_all_products(self) -> List[Product]:
+
+        products = self.db.query(ProductDB).all()
+        print(products)
+        results = []
+
+        for product in products:
+            reviews = self.db.query(ReviewDB).filter(and_(ReviewDB.product_id == product.product_id, ReviewDB.approval_status == "APPROVED")).all()
+
+            average_rating = 0
+            
+            if len(reviews) == 0:
+                average_rating = 0
+            else:
+                for i in reviews:
+                    average_rating += i.rating
+                average_rating = average_rating/len(reviews)
+
+
+            results.append(Product(
+                product_id=product.product_id,
+                name=product.name,
+                model=product.model,
+                description=product.description,
+                quantity=product.quantity,
+                warranty_status=product.warranty_status,
+                distributor=product.distributor,
+                image_url=product.image_url,
+                item_sold=product.item_sold,
+                price=product.price,
+                cost=product.cost,
+                category_id=product.category_id,
+                average_rating=average_rating
+                ))
+
+        print(results)
+            
+        return results
 
     def get_product_by_id(self, product_id: str) -> Optional[ProductDB]:
         return self.db.query(ProductDB).filter(ProductDB.product_id == product_id).first()
@@ -133,6 +240,7 @@ class ProductService:
         if order == "desc":
             return self.db.query(ProductDB).order_by(desc(ProductDB.price)).all()
         return self.db.query(ProductDB).order_by(asc(ProductDB.price)).all()
+    
 
     
     def update_popularity_scores(db: Session):
@@ -194,13 +302,167 @@ class ProductService:
         (ProductDB.name.ilike(f"%{query}%")) |  # Case-insensitive search for name
         (ProductDB.description.ilike(f"%{query}%"))  # Case-insensitive search for description
         ).all()
+
+        products = []
+
+
+        for product in results:
+            reviews = self.db.query(ReviewDB).filter(and_(ReviewDB.product_id == product.product_id, ReviewDB.approval_status == "APPROVED")).all()
+
+            average_rating = 0
+
+            if len(reviews) == 0:
+                average_rating = 0
+            else:
+                for i in reviews:
+                    average_rating += i.rating
+                average_rating = average_rating/len(reviews)
+            
+            products.append(Product(
+                product_id=product.product_id,
+                name=product.name,
+                model=product.model,
+                description=product.description,
+                quantity=product.quantity,
+                warranty_status=product.warranty_status,
+                distributor=product.distributor,
+                image_url=product.image_url,
+                item_sold=product.item_sold,
+                price=product.price,
+                cost=product.cost,
+                category_id=product.category_id,
+                average_rating=average_rating
+                ))
+            
+        
     
         # Convert results to a list of dictionaries to return as JSON
-        return results
-
-
+        return products
     
+    # TUNAHAN EKLENTİ - FILTERING
+
+    """
+    # Service to get products based on filters
+    def filter_products(self, category_id: int, filter_params: ProductFilterParams) -> List[ProductDB]:
+        # Start with all products in the specified category or its subcategories
+        products = self.db.query(ProductDB)
+
+        if filter_params.sub_category is None or filter_params.sub_category == 0:
+            products = self.get_products_by_category_id(category_id)
+        else:
+            products = products.filter(ProductDB.category_id == filter_params.sub_category)
+
+
+        # Apply price range filters
+        if filter_params.price_min is not None:
+            products = products.filter(ProductDB.price >= filter_params.price_min)
+        if filter_params.price_max is not None:
+            products = products.filter(ProductDB.price <= filter_params.price_max)
+
+        # Apply rating filter
+        if filter_params.rating_min is not None:
+            products = products.outerjoin(ReviewDB, ProductDB.product_id == ReviewDB.product_id)\
+                .group_by(ProductDB.product_id)\
+                .having(func.avg(ReviewDB.rating) >= filter_params.rating_min)
+
+        # Apply warranty filter
+        if filter_params.warranty_status is not None:
+            products = products.filter(ProductDB.warranty_status >= filter_params.warranty_status)
+
+        # Execute the query and return results
+        return products
+    """
+    def filter_products(self, category_id: int, filter_params: ProductFilterParams) -> List[Product]:
+        # Start with all products in the database
+        products = self.db.query(ProductDB)
+
+        # Check if a subcategory is specified, otherwise use root category and its subcategories
+        if filter_params.sub_category is None or filter_params.sub_category == 0:
+            # Fetch subcategories and include products from those
+            subcategories = [category_id] + [
+                sub.category_id for sub in self.get_categories_by_parent_id(category_id)
+            ]
+            products = products.filter(ProductDB.category_id.in_(subcategories))
+        else:
+            # Filter by the specified subcategory
+            products = products.filter(ProductDB.category_id == filter_params.sub_category)
+
+        # Apply price range filters
+        if filter_params.price_min is not None:
+            products = products.filter(ProductDB.price >= filter_params.price_min)
+        if filter_params.price_max is not None:
+            products = products.filter(ProductDB.price <= filter_params.price_max)
 
 
 
-    
+        # Apply rating filter
+        if filter_params.rating_min is not None:
+            products = products.outerjoin(ReviewDB, ProductDB.product_id == ReviewDB.product_id)\
+                .group_by(ProductDB.product_id)\
+                .having(func.avg(ReviewDB.rating) >= filter_params.rating_min)
+
+        # Apply warranty filter
+        if filter_params.warranty_status is not None:
+            products = products.filter(ProductDB.warranty_status >= filter_params.warranty_status)
+
+
+        # Execute the query and return results
+        return products
+
+    def get_discounted_products(self, sort_by: str = "rate") -> List[ProductDiscountSchema]:
+        """
+        Get discounted products sorted by discount rate or discount end date.
+
+        :param sort_by: "rate" to sort by discount rate, "end_date" to sort by discount end date
+        :return: List of discounted products
+        """
+        if sort_by == "end_date":
+            order_criteria = [Discount.end_date.asc(), Discount.discount_rate.desc()]
+        else:
+            order_criteria = [Discount.discount_rate.desc(), Discount.end_date.asc()]
+
+        discounted_products = (
+            self.db.query(
+                ProductDB.product_id,
+                ProductDB.name,
+                ProductDB.model,
+                ProductDB.description,
+                ProductDB.serial_number,
+                ProductDB.category_id,
+                ProductDB.quantity,
+                ProductDB.price,
+                ProductDB.distributor,
+                ProductDB.image_url,
+                ProductDB.item_sold,
+                ProductDB.warranty_status,
+                ProductDB.cost,
+                Discount.discount_rate,
+                Discount.end_date,
+            )
+            .join(Discount, ProductDB.product_id == Discount.product_id)
+            .filter(Discount.is_active == 1, ProductDB.quantity > 0)
+            .order_by(*order_criteria)
+            .all()
+        )
+
+        return [
+            ProductDiscountSchema(
+                product_id=product.product_id,
+                name=product.name,
+                model=product.model,
+                description=product.description,
+                serial_number=product.serial_number,
+                category_id=product.category_id,
+                quantity=product.quantity,
+                price=product.price,
+                distributor=product.distributor,
+                image_url=product.image_url,
+                item_sold=product.item_sold,
+                warranty_status=product.warranty_status,
+                cost=product.cost,
+                discount_rate=product.discount_rate,
+                end_date=product.end_date,
+            )
+            for product in discounted_products
+        ]
+

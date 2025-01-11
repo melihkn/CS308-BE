@@ -6,7 +6,7 @@ from models.models import Discount
 from pydantic import BaseModel, ConfigDict , Field
 from typing import List
 from datetime import datetime
-
+from dependencies import verify_sm_role, oauth2_scheme
 router = APIRouter()
 
 class DiscountCreate(BaseModel):
@@ -17,10 +17,10 @@ class DiscountCreate(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-@router.get("/discounts", response_model=List[DiscountCreate])
-def read_discounts(db: Session = Depends(get_db)):
+@router.get("/discounts", response_model=List[DiscountCreate],dependencies=[Depends(verify_sm_role)])
+def read_discounts(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
     return get_discounts(db)
 
-@router.post("/discounts", response_model=DiscountCreate)
-def create_discount(discount: DiscountCreate, db: Session = Depends(get_db)):
+@router.post("/discounts", response_model=DiscountCreate,dependencies=[Depends(verify_sm_role)])
+def create_discount(discount: DiscountCreate, db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
     return create_discount_service(db, discount)

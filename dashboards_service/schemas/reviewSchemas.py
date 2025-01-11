@@ -8,12 +8,14 @@ class ReviewCreate(BaseModel):
 
 class ReviewResponse(BaseModel):
     review_id: str
+    image_url: Optional[str] = None
     customer_id: str
+    customer_name: str
+    product_name: str
     product_id: str
     rating: int
     comment: Optional[str] = None
     approval_status: str
-    pm_id: Optional[str] = None
 
 
 class ReviewApprovalUpdate(BaseModel):
