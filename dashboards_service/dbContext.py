@@ -3,6 +3,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import declarative_base
 
 
+
 DATABASE_URL = "mysql+pymysql://root:orkun2003@127.0.0.1:3306/myvet_db" 
 
 
