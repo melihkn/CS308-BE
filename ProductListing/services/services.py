@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
-from models.models import ProductDB, ProductCreate, ProductUpdate, ReviewDB, ProductPopularity, CategoryDB 
+
+from models.models import Product, ProductDB, ProductCreate, ReviewDB, ProductUpdate, ReviewDB, ProductPopularity, CategoryDB 
 from typing import List, Optional
 import uuid
 from fastapi import Path
@@ -68,7 +69,7 @@ class ProductService:
         return self.db.query(CategoryDB).filter(CategoryDB.parentcategory_id == parent_id).all()
 
     # root category girilirse subcategorilerindeki ürünler de dönülsün - detailed "/getproduct/category/{category_id}"
-    def get_products_by_category_id(self, category_id: int) -> List[ProductDB]:
+    def get_products_by_category_id(self, category_id: int) -> List[Product]:
         # when items from root category is wanted, we return all the products in the subcategories of that root category
         
         # if the category is a root category
@@ -77,15 +78,83 @@ class ProductService:
             subcategories = self.get_categories_by_parent_id(category_id)
             # get all the products in the subcategories
             products = []
+            products += self.db.query(ProductDB).filter(ProductDB.category_id == category_id).all()
             for subcategory in subcategories:
                 products += self.db.query(ProductDB).filter(ProductDB.category_id == subcategory.category_id).all()
-            return products
+
+            result = []
+
+            for product in products:
+                reviews = self.db.query(ReviewDB).filter(and_(ReviewDB.product_id == product.product_id, ReviewDB.approval_status == "APPROVED")).all()
+
+                average_rating = 0
+                
+                if len(reviews) == 0:
+                    average_rating = 0
+                else:
+                    for i in reviews:
+                        average_rating += i.rating
+                    average_rating = average_rating/len(reviews)
+
+
+                result.append(Product(
+                    product_id=product.product_id,
+                    name=product.name,
+                    model=product.model,
+                    description=product.description,
+                    quantity=product.quantity,
+                    warranty_status=product.warranty_status,
+                    distributor=product.distributor,
+                    image_url=product.image_url,
+                    item_sold=product.item_sold,
+                    price=product.price,
+                    cost=product.cost,
+                    category_id=product.category_id,
+                    average_rating=average_rating
+                    ))
+            return result
         # if the category is not a root category
         else:
             return self.db.query(ProductDB).filter(ProductDB.category_id == category_id).all()
 
-    def get_all_products(self) -> List[ProductDB]:
-        return self.db.query(ProductDB).all()
+    def get_all_products(self) -> List[Product]:
+
+        products = self.db.query(ProductDB).all()
+        print(products)
+        results = []
+
+        for product in products:
+            reviews = self.db.query(ReviewDB).filter(and_(ReviewDB.product_id == product.product_id, ReviewDB.approval_status == "APPROVED")).all()
+
+            average_rating = 0
+            
+            if len(reviews) == 0:
+                average_rating = 0
+            else:
+                for i in reviews:
+                    average_rating += i.rating
+                average_rating = average_rating/len(reviews)
+
+
+            results.append(Product(
+                product_id=product.product_id,
+                name=product.name,
+                model=product.model,
+                description=product.description,
+                quantity=product.quantity,
+                warranty_status=product.warranty_status,
+                distributor=product.distributor,
+                image_url=product.image_url,
+                item_sold=product.item_sold,
+                price=product.price,
+                cost=product.cost,
+                category_id=product.category_id,
+                average_rating=average_rating
+                ))
+
+        print(results)
+            
+        return results
 
     def get_product_by_id(self, product_id: str) -> Optional[ProductDB]:
         return self.db.query(ProductDB).filter(ProductDB.product_id == product_id).first()
@@ -231,9 +300,41 @@ class ProductService:
         (ProductDB.name.ilike(f"%{query}%")) |  # Case-insensitive search for name
         (ProductDB.description.ilike(f"%{query}%"))  # Case-insensitive search for description
         ).all()
+
+        products = []
+
+        for product in results:
+            reviews = self.db.query(ReviewDB).filter(and_(ReviewDB.product_id == product.product_id, ReviewDB.approval_status == "APPROVED")).all()
+
+            average_rating = 0
+
+            if len(reviews) == 0:
+                average_rating = 0
+            else:
+                for i in reviews:
+                    average_rating += i.rating
+                average_rating = average_rating/len(reviews)
+            
+            products.append(Product(
+                product_id=product.product_id,
+                name=product.name,
+                model=product.model,
+                description=product.description,
+                quantity=product.quantity,
+                warranty_status=product.warranty_status,
+                distributor=product.distributor,
+                image_url=product.image_url,
+                item_sold=product.item_sold,
+                price=product.price,
+                cost=product.cost,
+                category_id=product.category_id,
+                average_rating=average_rating
+                ))
+            
+        
     
         # Convert results to a list of dictionaries to return as JSON
-        return results
+        return products
     
     # TUNAHAN EKLENTİ - FILTERING
 
@@ -268,7 +369,7 @@ class ProductService:
         # Execute the query and return results
         return products
     """
-    def filter_products(self, category_id: int, filter_params: ProductFilterParams) -> List[ProductDB]:
+    def filter_products(self, category_id: int, filter_params: ProductFilterParams) -> List[Product]:
         # Start with all products in the database
         products = self.db.query(ProductDB)
 
@@ -289,6 +390,8 @@ class ProductService:
         if filter_params.price_max is not None:
             products = products.filter(ProductDB.price <= filter_params.price_max)
 
+
+        print("BURADAYIM")
         # Apply rating filter
         if filter_params.rating_min is not None:
             products = products.outerjoin(ReviewDB, ProductDB.product_id == ReviewDB.product_id)\
@@ -298,6 +401,7 @@ class ProductService:
         # Apply warranty filter
         if filter_params.warranty_status is not None:
             products = products.filter(ProductDB.warranty_status >= filter_params.warranty_status)
+
 
         # Execute the query and return results
         return products

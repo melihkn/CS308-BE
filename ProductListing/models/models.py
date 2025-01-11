@@ -33,14 +33,13 @@ class ProductDB(Base):
 
 # SQLAlchemy Model for Reviews
 class ReviewDB(Base):
-    __tablename__ = 'reviews'
+    __tablename__ = 'review'
 
     review_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     customer_id = Column(String(36), nullable=False)
     product_id = Column(String(36), ForeignKey('products.product_id', ondelete="CASCADE"), nullable=False)
     rating = Column(Integer, nullable=False)
     comment = Column(Text, nullable=True)
-    pm_id = Column(CHAR(36), nullable=True)
     approval_status = Column(String(50), nullable=False)
 
     # Relationship back to product
@@ -68,6 +67,7 @@ class Product(BaseModel):
     price: float 
     cost: float  
     category_id: Optional[int] = None
+    average_rating: Optional[float] = None
 
     class Config:
         orm_mode = True
