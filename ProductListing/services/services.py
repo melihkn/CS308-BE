@@ -1,6 +1,8 @@
 from sqlalchemy.orm import Session
-
 from models.models import Product, ProductDB, ProductCreate, ReviewDB, ProductUpdate, ReviewDB, ProductPopularity, CategoryDB 
+
+from models.models import ProductDB, ProductCreate, ProductUpdate, ReviewDB, ProductPopularity, CategoryDB , Discount, ProductDiscountSchema
+
 from typing import List, Optional
 import uuid
 from fastapi import Path
@@ -303,6 +305,7 @@ class ProductService:
 
         products = []
 
+
         for product in results:
             reviews = self.db.query(ReviewDB).filter(and_(ReviewDB.product_id == product.product_id, ReviewDB.approval_status == "APPROVED")).all()
 
@@ -391,7 +394,7 @@ class ProductService:
             products = products.filter(ProductDB.price <= filter_params.price_max)
 
 
-        print("BURADAYIM")
+
         # Apply rating filter
         if filter_params.rating_min is not None:
             products = products.outerjoin(ReviewDB, ProductDB.product_id == ReviewDB.product_id)\
@@ -405,3 +408,61 @@ class ProductService:
 
         # Execute the query and return results
         return products
+
+    def get_discounted_products(self, sort_by: str = "rate") -> List[ProductDiscountSchema]:
+        """
+        Get discounted products sorted by discount rate or discount end date.
+
+        :param sort_by: "rate" to sort by discount rate, "end_date" to sort by discount end date
+        :return: List of discounted products
+        """
+        if sort_by == "end_date":
+            order_criteria = [Discount.end_date.asc(), Discount.discount_rate.desc()]
+        else:
+            order_criteria = [Discount.discount_rate.desc(), Discount.end_date.asc()]
+
+        discounted_products = (
+            self.db.query(
+                ProductDB.product_id,
+                ProductDB.name,
+                ProductDB.model,
+                ProductDB.description,
+                ProductDB.serial_number,
+                ProductDB.category_id,
+                ProductDB.quantity,
+                ProductDB.price,
+                ProductDB.distributor,
+                ProductDB.image_url,
+                ProductDB.item_sold,
+                ProductDB.warranty_status,
+                ProductDB.cost,
+                Discount.discount_rate,
+                Discount.end_date,
+            )
+            .join(Discount, ProductDB.product_id == Discount.product_id)
+            .filter(Discount.is_active == 1, ProductDB.quantity > 0)
+            .order_by(*order_criteria)
+            .all()
+        )
+
+        return [
+            ProductDiscountSchema(
+                product_id=product.product_id,
+                name=product.name,
+                model=product.model,
+                description=product.description,
+                serial_number=product.serial_number,
+                category_id=product.category_id,
+                quantity=product.quantity,
+                price=product.price,
+                distributor=product.distributor,
+                image_url=product.image_url,
+                item_sold=product.item_sold,
+                warranty_status=product.warranty_status,
+                cost=product.cost,
+                discount_rate=product.discount_rate,
+                end_date=product.end_date,
+            )
+            for product in discounted_products
+        ]
+

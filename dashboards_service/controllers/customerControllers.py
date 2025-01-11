@@ -6,7 +6,7 @@ from services.customerService import get_customers
 from models.models import Customer
 from dbContext import get_db
 from typing import List, Optional
-
+from dependencies import verify_sm_role, oauth2_scheme
 
 
 router = APIRouter()
@@ -35,6 +35,6 @@ class CustomerCreate(BaseModel):
     
 
 
-@router.get("/customers", response_model=List[CustomerCreate])
-def read_customers(db: Session = Depends(get_db)):
+@router.get("/customers", response_model=List[CustomerCreate],dependencies=[Depends(verify_sm_role)])
+def read_customers(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
     return get_customers(db)

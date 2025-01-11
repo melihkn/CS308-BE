@@ -1,12 +1,16 @@
 from sqlalchemy.orm import Session, joinedload
 from models.models import Discount, Product, Wishlist, WishlistItem, Customer
 from datetime import datetime
+from services.EmailService import EmailService
 
 def send_notification(customer_email: str, product_name: str, discount_rate: float):
     # For simplicity, we'll just log the notification
     # Replace this with actual email/SMS sending logic as needed
+
     print(f"Notification sent to {customer_email}: "
           f"The product '{product_name}' is now discounted by {discount_rate}%!")
+    msg = f"The product '{product_name}' is now discounted by {discount_rate}%!"
+    EmailService.send_discount_email(customer_email,msg)
 
 def get_discounts(db: Session):
     return db.query(Discount).all()

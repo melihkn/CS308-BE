@@ -6,6 +6,7 @@ DATABASE_URL = "mysql+pymysql://root:TunahanTunahan987.%2C@127.0.0.1:3306/CS308_
 
 
 
+
 # SQLAlchemy engine
 engine = create_engine(DATABASE_URL)
 

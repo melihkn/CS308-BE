@@ -16,20 +16,73 @@ class ProductDB(Base):
     name = Column(String(100), nullable=False)
     model = Column(String(50), nullable=False)
     description = Column(Text, nullable=True)
-    category_id = Column(Integer, ForeignKey('category.category_id', ondelete="SET NULL"), nullable=True)
     serial_number = Column(String(100), unique=True, nullable=False)
+    category_id = Column(Integer, ForeignKey('category.category_id', ondelete="SET NULL"), nullable=True)
     quantity = Column(Integer, nullable=False, default=0)
-    item_sold = Column(Integer, nullable=False, default=0)  # Track total quantity sold
-    warranty_status = Column(Integer, nullable=True)
+    price = Column(DECIMAL, nullable=False)   # Track total quantity sold
     distributor = Column(String(100), nullable=True) 
     image_url = Column(String(255), nullable=True)
-    price = Column(DECIMAL, nullable=False)  
+    item_sold = Column(Integer, nullable=False, default=0) 
+    warranty_status = Column(Integer, nullable=True)
     cost = Column(DECIMAL, nullable=False)   
     # Relationship to reviews
+    discounts = relationship("Discount", back_populates="product")
     reviews = relationship("ReviewDB", back_populates="product")
+    
 
     def __repr__(self):
         return f"<Product(name={self.name}, model={self.model}, quantity={self.quantity})>"
+    
+class Discount(Base):
+    __tablename__ = "discount"
+
+    discount_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    product_id = Column(String(36), ForeignKey("products.product_id", ondelete="CASCADE"), nullable=True)
+    discount_rate = Column(DECIMAL(5, 2), nullable=False)
+    start_date = Column(DateTime, nullable=False)
+    end_date = Column(DateTime, nullable=False)
+    is_active = Column(Integer, nullable=False, default=1)
+
+    product = relationship("ProductDB", back_populates="discounts")
+
+class ProductSchema(BaseModel):
+    product_id: str
+    name: str
+    model: str
+    description: Optional[str]
+    serial_number: str
+    category_id: Optional[int]
+    quantity: int
+    price: float
+    distributor: Optional[str]
+    image_url: Optional[str]
+    item_sold: int
+    warranty_status: Optional[int]
+    cost: float
+    
+    class Config:
+        from_attributes = True
+
+class ProductDiscountSchema(BaseModel):
+    product_id: str
+    name: str
+    model: str
+    description: Optional[str] = None
+    serial_number: Optional[str] = None
+    category_id: Optional[int] = None
+    quantity: int
+    price: float
+    distributor: Optional[str] = None
+    image_url: Optional[str] = None
+    item_sold: Optional[int] = 0
+    warranty_status: Optional[int] = None
+    cost: Optional[float] = 0.0
+    discount_rate: float
+    end_date: datetime
+
+    class Config:
+        from_attributes = True
+
 
 # SQLAlchemy Model for Reviews
 class ReviewDB(Base):
@@ -70,7 +123,7 @@ class Product(BaseModel):
     average_rating: Optional[float] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 
