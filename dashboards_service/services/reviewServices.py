@@ -37,7 +37,7 @@ def get_reviews_(db : Session):
     reviews_ = []
 
     for review in reviews:
-        product_name = db.query(Product.name).filter(Product.product_id == review.product_id).first()
+        product = db.query(Product).filter(Product.product_id == review.product_id).first()
         user = db.query(Customer).filter(Customer.user_id == review.customer_id).first()
         if user.middlename is None:
             name = user.name + " " + user.surname
@@ -45,9 +45,10 @@ def get_reviews_(db : Session):
             name = user.name + " " + user.middlename + " " + user.surname
         reviews_.append(ReviewResponse(
             review_id = review.review_id,
+            image_url = product.image_url,
             customer_id = review.customer_id,
             customer_name = name,
-            product_name = product_name.name,
+            product_name = product.name,
             product_id = review.product_id,
             rating = review.rating,
             comment = review.comment,

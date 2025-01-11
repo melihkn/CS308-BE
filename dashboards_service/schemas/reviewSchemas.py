@@ -8,6 +8,7 @@ class ReviewCreate(BaseModel):
 
 class ReviewResponse(BaseModel):
     review_id: str
+    image_url: Optional[str] = None
     customer_id: str
     customer_name: str
     product_name: str
