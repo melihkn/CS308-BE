@@ -128,3 +128,10 @@ dashboards_service/__pycache__/
 shoppingCart_service/__pycache__/
 ProductListing/migrations/
 
+CS308-BE/Wishlist_service/dbContext.py
+CS308-BE/shoppingCart_service/utils/db_utils.py
+CS308-BE/Review/dbContext_Review.py
+CS308-BE/ProductListing/dbContext.py
+CS308-BE/Order_service/utils/db_utils.py
+CS308-BE/dashboards_service/dbContext.py
+CS308-BE/Authentication_service/utils/db_utils.py
