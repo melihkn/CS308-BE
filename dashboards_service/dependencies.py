@@ -15,10 +15,8 @@ def verify_pm_role(token: str = Depends(oauth2_scheme), db: Session = Depends(ge
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        print("Verifying pm role")
         # Decode JWT token using your JWT secret and algorithm
         payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
-        print(token)
         
         # Extract user role from token
         role: str = payload.get("role")

@@ -40,6 +40,7 @@ class Address(Base):
 
     # Relationships
     customer = relationship("Customer", back_populates="addresses")
+    delivery = relationship("Delivery", back_populates="address", cascade="all, delete-orphan") 
 
 
 # Orders Table
@@ -57,7 +58,7 @@ class Order(Base):
     # Relationships
     customer = relationship("Customer", back_populates="orders")
     order_items = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
-
+    delivery = relationship("Delivery", back_populates="order", cascade="all, delete-orphan") # one-to-one relationship is added for delivery object creation after order is created
 
 # Order Items Table
 class OrderItem(Base):
@@ -138,7 +139,7 @@ class WishlistItem(Base):
     # Relationships
     wishlist = relationship("Wishlist", back_populates="wishlist_items")
     product = relationship("Product", back_populates="wishlist_items")
-
+    
 
 # Shopping Cart Table
 class ShoppingCart(Base):
@@ -183,6 +184,37 @@ class Review(Base):
     product = relationship("Product", back_populates="reviews")
 
 
+# Refund Table
+class Refund(Base):
+    __tablename__ = 'refund'
+    refund_id = Column(CHAR(36), primary_key=True, default=str(uuid4()))
+    order_id = Column(CHAR(36), ForeignKey('orders.order_id'))
+    order_item_id = Column(CHAR(36), ForeignKey('order_items.order_item_id'))
+    request_date = Column(DateTime, nullable=False, default=datetime.utcnow)
+    status = Column(String(50), nullable=False)
+    refund_amount = Column(DECIMAL(10, 2), nullable=False)
+    #sm_id = Column(CHAR(36), ForeignKey('sales_managers.sm_id'))
+
+    # Relationships
+    #order = relationship("Order", back_populates="refund")
+    #order_item = relationship("OrderItem", back_populates="refund")
+    #sales_manager = relationship("SalesManager", back_populates="refund")
+
+
+# Delivery Table
+class Delivery(Base):
+    __tablename__ = 'delivery'
+
+    delivery_id = Column(CHAR(36), primary_key=True, default=lambda: str(uuid4()))
+    order_id = Column(CHAR(36), ForeignKey('orders.order_id', ondelete="CASCADE"), nullable=True)
+    delivery_status = Column(VARCHAR(50), nullable=False)
+    addres_id = Column(CHAR(36), ForeignKey('adres.customer_adres_id', ondelete="SET NULL"), nullable=True)
+
+    # Relationships
+    order = relationship("Order", back_populates="delivery")
+    address = relationship("Address", back_populates="delivery")
+
+
 # Pydantic models
 from pydantic import BaseModel, Field
 from typing import List, Optional
@@ -198,6 +230,9 @@ class OrderCreateSchema(BaseModel):
     customer_id: str
     total_price: float
     order_date: str
+    order_address : str
+    order_address_type: str # Home, work etc.
+    order_address_name: Optional[str]
     payment_status: str
     invoice_link: Optional[str]
     order_status: int
@@ -213,6 +248,10 @@ class OrderResponseSchema(BaseModel):
     customer_id: str
     total_price: float
     order_date: str
+    # Bu 3 field optional çünkü eski order ların içinde bu fieldlar yok ve hata vermemesi için optional yapıldı 
+    order_address : Optional[str] = None
+    order_address_type: Optional[str] = None
+    order_address_name: Optional[str] = None
     payment_status: str
     invoice_link: Optional[str]
     order_status: int

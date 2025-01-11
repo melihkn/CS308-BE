@@ -16,7 +16,7 @@ from dependencies import verify_sm_role
 router = APIRouter()
 
 class OrderCreate(BaseModel):
-    order_id: str
+    order_id : str     # ID of the order
     customer_id: str                       # ID of the customer placing the order
     total_price: Decimal                   # Total price of the order
     order_date: datetime = Field(default_factory=datetime.utcnow)  # Order date defaults to current time
