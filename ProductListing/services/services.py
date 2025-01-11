@@ -6,6 +6,17 @@ from fastapi import Path
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime
 from sqlalchemy import func, desc, asc, text
+from pydantic import BaseModel
+from typing import Optional
+
+from sqlalchemy import and_, or_
+# Filter Parameters Model
+class ProductFilterParams(BaseModel):
+    sub_category: Optional[int] = None
+    price_min: Optional[float] = None
+    price_max: Optional[float] = None
+    rating_min: Optional[float] = None
+    warranty_status: Optional[int] = None
 
 
 class ProductService:
@@ -46,7 +57,32 @@ class ProductService:
             "parent_category_id": category.parentcategory_id
         }
 
+     # ONLY 1 LEVEL DEPTH CATEGORIES ARE SUPPORTED
 
+    # return the categories which have no parent category
+    def get_root_categories(self) -> List[CategoryDB]:
+        return self.db.query(CategoryDB).filter(CategoryDB.parentcategory_id == None).all()
+    
+    # return the categories which have the specified parent category
+    def get_categories_by_parent_id(self, parent_id: str) -> List[CategoryDB]:
+        return self.db.query(CategoryDB).filter(CategoryDB.parentcategory_id == parent_id).all()
+
+    # root category girilirse subcategorilerindeki ürünler de dönülsün - detailed "/getproduct/category/{category_id}"
+    def get_products_by_category_id(self, category_id: str) -> List[ProductDB]:
+        # when items from root category is wanted, we return all the products in the subcategories of that root category
+        
+        # if the category is a root category
+        if self.db.query(CategoryDB).filter(CategoryDB.category_id == category_id).first().parentcategory_id == None:
+            # get all the subcategories of the root category
+            subcategories = self.get_categories_by_parent_id(category_id)
+            # get all the products in the subcategories
+            products = []
+            for subcategory in subcategories:
+                products += self.db.query(ProductDB).filter(ProductDB.category_id == subcategory.category_id).all()
+            return products
+        # if the category is not a root category
+        else:
+            return self.db.query(ProductDB).filter(ProductDB.category_id == category_id).all()
 
     def get_all_products(self) -> List[ProductDB]:
         return self.db.query(ProductDB).all()
@@ -133,6 +169,7 @@ class ProductService:
         if order == "desc":
             return self.db.query(ProductDB).order_by(desc(ProductDB.price)).all()
         return self.db.query(ProductDB).order_by(asc(ProductDB.price)).all()
+    
 
     
     def update_popularity_scores(db: Session):
@@ -197,10 +234,35 @@ class ProductService:
     
         # Convert results to a list of dictionaries to return as JSON
         return results
-
-
     
-
-
-
+    # TUNAHAN EKLENTİ - FILTERING
     
+    # Service to get products based on filters
+    def filter_products(self, category_id: str, filter_params: ProductFilterParams) -> List[ProductDB]:
+        # Start with all products in the specified category or its subcategories
+        products = self.db.query(ProductDB)
+
+        # Filter by category (root category or subcategories)
+        if filter_params.sub_category: # if subcategory is specified
+            products = products.filter(ProductDB.category_id == filter_params.sub_category)
+        else: # if subcategory is not specified
+            products = products.filter(ProductDB.category_id == category_id)
+
+        # Apply price range filters
+        if filter_params.price_min is not None:
+            products = products.filter(ProductDB.price >= filter_params.price_min)
+        if filter_params.price_max is not None:
+            products = products.filter(ProductDB.price <= filter_params.price_max)
+
+        # Apply rating filter
+        if filter_params.rating_min is not None:
+            products = products.outerjoin(ReviewDB, ProductDB.product_id == ReviewDB.product_id)\
+                .group_by(ProductDB.product_id)\
+                .having(func.avg(ReviewDB.rating) >= filter_params.rating_min)
+
+        # Apply warranty filter
+        if filter_params.warranty_status is not None:
+            products = products.filter(ProductDB.warranty_status >= filter_params.warranty_status)
+
+        # Execute the query and return results
+        return products.all()

@@ -58,7 +58,57 @@ async def get_products_sorted_by_price(
     
     return service.get_products_sorted_by_price(order)
 
+# TUNAHAN - yeni eklenen path ler
 
+# return the categories which have no parent category
+@router.get("/categories/root", response_model=List[CategoriesSchema])
+async def get_root_categories(db: Session = Depends(get_db)):
+    service = ProductService(db)
+    return service.get_root_categories()
+
+# return the categories which have the specified parent category
+@router.get("/categories/parent/{parent_id}", response_model=List[CategoriesSchema])
+async def get_categories_by_parent_id(parent_id: int, db: Session = Depends(get_db)):
+    service = ProductService(db)
+    return service.get_categories_by_parent_id(parent_id)
+
+# root category girilirse subcategorilerindeki ürünler de dönülsün - detailed "/getproduct/category/{category_id}"
+@router.get("/getproduct/category/detailed/{category_id}", response_model=List[Product])
+async def get_products_by_category_id(category_id: int, db: Session = Depends(get_db)):
+    service = ProductService(db)
+    return service.get_products_by_category_id(category_id)
+
+
+# FILTERS
+class ProductFilterParams(BaseModel):
+    sub_category: Optional[int] = None
+    price_min: Optional[float] = None
+    price_max: Optional[float] = None
+    rating_min: Optional[float] = None
+    warranty_status: Optional[int] = None
+
+
+@router.post("/filterproducts/category/{category_id}", response_model=List[Product])
+async def filter_products(
+    category_id: int,
+    filters: ProductFilterParams,
+    db: Session = Depends(get_db),
+):
+    """
+    Filter products based on subcategory, price range, rating, and warranty status.
+
+    Args:
+        category_id (int): The ID of the root category.
+        filters (dict): Dictionary containing filter parameters.
+        db (Session): The database session dependency.
+
+    Returns:
+        List[Product]: List of filtered products.
+    """
+    service = ProductService(db)
+    return service.filter_products(category_id, filters)    
+
+# ---
 
 @router.get("/popular", response_model=List[Product])
 def get_products_sorted_by_popularity(db: Session = Depends(get_db)):
@@ -163,6 +213,9 @@ async def get_products_by_category(
     category_id: int,
     db: Session = Depends(get_db)
 ):
+    """
+    Get products by category ID.
+    """
     print(f"Received category_id: {category_id}")  # Log the incoming category_id
     try:
         if category_id is not None:
