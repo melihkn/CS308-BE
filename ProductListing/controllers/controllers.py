@@ -3,7 +3,7 @@ import uuid
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from models.models import Category, CategoryDB, Product, ProductCreate, ProductDB, ProductUpdate
+from models.models import Category, CategoryDB, Product, ProductCreate, ProductDB, ProductUpdate, ProductSchema, ProductDiscountSchema
 from services.services import ProductService
 from dbContext import get_db  # This dependency function provides the database session
 
@@ -144,19 +144,10 @@ async def get_categories(db: Session = Depends(get_db)):
     return db.query(CategoryDB).all()
 
 
-class ProductSchema(BaseModel):
-    product_id: str
-    name: str
-    model: str
-    description: Optional[str]
-    category_id: Optional[int]
-    quantity: int
-    price: float
-    distributor: Optional[str]
-    image_url: Optional[str]
 
-    class Config:
-        orm_mode = True
+
+    
+
 
 @router.get("/getproduct/category/{category_id}", response_model=List[ProductSchema])
 async def get_products_by_category(
@@ -178,3 +169,19 @@ async def get_products_by_category(
         print(f"Error: {e}")
         raise HTTPException(status_code=500, detail="Server Error")
 
+@router.get("/products/discounted-by-rate", response_model=List[ProductDiscountSchema])
+async def get_discounted_products_by_rate(db: Session = Depends(get_db)):
+    """
+    Get discounted products sorted by discount rate.
+    """
+    service = ProductService(db)
+    return service.get_discounted_products(sort_by="rate")
+
+
+@router.get("/products/discounted-by-end-date", response_model=List[ProductDiscountSchema])
+async def get_discounted_products_by_end_date(db: Session = Depends(get_db)):
+    """
+    Get discounted products sorted by discount end date.
+    """
+    service = ProductService(db)
+    return service.get_discounted_products(sort_by="end_date")
