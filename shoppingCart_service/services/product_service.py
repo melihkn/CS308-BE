@@ -45,7 +45,7 @@ class ProductService:
             "price": float(product.price),
             "distributor": product.distributor,
             "image_url": product.image_url,
-            "discount": 0
+            "discount_rate": 0
         }
 
         
