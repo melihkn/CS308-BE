@@ -88,6 +88,7 @@ class ProductService:
 
             for product in products:
                 reviews = self.db.query(ReviewDB).filter(and_(ReviewDB.product_id == product.product_id, ReviewDB.approval_status == "APPROVED")).all()
+
                 discount = self.db.query(Discount).filter(and_(Discount.product_id == product.product_id, Discount.is_active)).first()
                 average_rating = 0
                 

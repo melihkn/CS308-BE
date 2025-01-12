@@ -10,7 +10,8 @@ def send_notification(customer_email: str, product_name: str, discount_rate: flo
     print(f"Notification sent to {customer_email}: "
           f"The product '{product_name}' is now discounted by {discount_rate}%!")
     msg = f"The product '{product_name}' is now discounted by {discount_rate}%!"
-    EmailService.send_discount_email(customer_email,msg)
+    subj = "There is a DISCOUNTED Product in your wishlist!!"
+    EmailService.send_discount_email(customer_email,subj,msg)
 
 def get_discounts(db: Session):
     return db.query(Discount).all()
