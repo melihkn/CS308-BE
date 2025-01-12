@@ -89,7 +89,7 @@ class ProductService:
             for product in products:
                 reviews = self.db.query(ReviewDB).filter(and_(ReviewDB.product_id == product.product_id, ReviewDB.approval_status == "APPROVED")).all()
 
-                average_rating = 0
+                average_rating = 0.0
                 
                 if len(reviews) == 0:
                     average_rating = 0
