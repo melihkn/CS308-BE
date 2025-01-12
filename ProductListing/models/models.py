@@ -77,8 +77,9 @@ class ProductDiscountSchema(BaseModel):
     item_sold: Optional[int] = 0
     warranty_status: Optional[int] = None
     cost: Optional[float] = 0.0
-    discount_rate: float
-    end_date: datetime
+    discount_rate: Optional[float] = 0.0
+    end_date: Optional[datetime] = None
+    average_rating: Optional[float] = None
 
     class Config:
         from_attributes = True

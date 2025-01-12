@@ -1,6 +1,8 @@
 from sqlalchemy.orm import Session
-from models.models import Product 
+from models.models import Product, Discount
 from fastapi import HTTPException
+from sqlalchemy import and_
+
 
 
 # This service is for in shopping card FE, to get the product details, update the quantity of the product, get all products, increment the number of items sold for a product, and check if a product is in stock.
@@ -18,10 +20,11 @@ class ProductService:
         - dict: A dictionary with product details or raises an HTTP 404 if the product is not found.
         """
         product = db.query(Product).filter(Product.product_id == product_id).first()
+        discount = db.query(Discount).filter(and_(Discount.product_id == product.product_id, Discount.is_active)).first()
         if not product:
             raise HTTPException(status_code=404, detail="Product not found")
-        
-        return {
+        if discount:
+            return {
             "product_id": product.product_id,
             "name": product.name,
             "model": product.model,
@@ -30,7 +33,22 @@ class ProductService:
             "price": float(product.price),
             "distributor": product.distributor,
             "image_url": product.image_url,
+            "discount_rate": float(discount.discount_rate)
         }
+        else:
+            return {
+            "product_id": product.product_id,
+            "name": product.name,
+            "model": product.model,
+            "description": product.description,
+            "quantity": product.quantity,
+            "price": float(product.price),
+            "distributor": product.distributor,
+            "image_url": product.image_url,
+            "discount": 0
+        }
+
+        
 
     @staticmethod
     def update_product_quantity(product_id: str, quantity: int, db: Session):
