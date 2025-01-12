@@ -7,7 +7,7 @@ import os
 
 class EmailService:
     @staticmethod
-    def send_discount_email(customer_email: str, message: str):
+    def send_discount_email(customer_email: str,subjectt: str, message: str):
         """
         Send the discount notification as an email.
 
@@ -24,7 +24,7 @@ class EmailService:
         smtp_port = 587
 
         # Create the email
-        subject = "There is a Discount for your Wishlist!"
+        subject = subjectt
         body = message
 
         msg = MIMEMultipart()

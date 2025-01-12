@@ -46,10 +46,11 @@ def update_refund_service(db: Session, refund_id: str, refund_data):
 
     # Refund bilgilerini e-posta ile gönder
     msg = (
-        f"Your refund request for order item '{refund.order_item_id}' with a refund amount of {refund.refund_amount} "
+        f"Your refund request for order '{refund.order_id}' with a refund amount of {refund.refund_amount} "
         f"has been {refund.status}."
     )
+    subject = "About your refund request"
 
-    EmailService.send_discount_email(customer_email, msg)
+    EmailService.send_discount_email(customer_email,subject ,msg)
 
     return refund
