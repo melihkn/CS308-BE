@@ -79,6 +79,7 @@ class ProductDiscountSchema(BaseModel):
     cost: Optional[float] = 0.0
     discount_rate: float
     end_date: datetime
+    average_rating: Optional[float] = None
 
     class Config:
         from_attributes = True
