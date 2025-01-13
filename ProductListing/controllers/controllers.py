@@ -88,7 +88,7 @@ class ProductFilterParams(BaseModel):
     warranty_status: Optional[int] = None
 
 
-@router.post("/filterproducts/category/{category_id}", response_model=List[Product])
+@router.post("/filterproducts/category/{category_id}", response_model=List[ProductDiscountSchema])
 async def filter_products(
     category_id: int,
     filters: ProductFilterParams,
