@@ -151,6 +151,8 @@ class ProductService:
             reviews = self.db.query(ReviewDB).filter(and_(ReviewDB.product_id == product.product_id, ReviewDB.approval_status == "APPROVED")).all()
 
             average_rating = 0
+            discount = self.db.query(Discount).filter(and_(Discount.product_id == product.product_id, Discount.is_active)).first()
+
             
             if len(reviews) == 0:
                 average_rating = 0
@@ -160,7 +162,7 @@ class ProductService:
                 average_rating = average_rating/len(reviews)
 
 
-            results.append(Product(
+            results.append(ProductDiscountSchema(
                 product_id=product.product_id,
                 name=product.name,
                 model=product.model,
@@ -173,7 +175,10 @@ class ProductService:
                 price=product.price,
                 cost=product.cost,
                 category_id=product.category_id,
-                average_rating=average_rating
+                average_rating=average_rating,
+                discount_rate=discount.discount_rate if discount else 0,
+                end_date=discount.end_date if discount else None
+
                 ))
 
         print(results)

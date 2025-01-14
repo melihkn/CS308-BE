@@ -64,7 +64,9 @@ class AuthService:
             "surname": user.surname,
             "email": user.email,
             "phone_number": user.phone_number,
-            "role": role
+            "role": role,
+            "address" : "Sabanci University",
+            "tax_id" : "1234567890"
         }
 
     # new version of login function

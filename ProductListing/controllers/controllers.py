@@ -32,7 +32,7 @@ def get_product_category(product_id: str, db: Session = Depends(get_db)):
     return service.get_category_info_of_product(product_id)
     
 
-@router.get("/", response_model=List[Product])
+@router.get("/", response_model=List[ProductDiscountSchema])
 async def get_all_products(db: Session = Depends(get_db)):
     service = ProductService(db)
     return service.get_all_products()

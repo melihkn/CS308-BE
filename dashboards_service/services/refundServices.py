@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from models.models import Customer, Order, OrderItem, Refund
+from models.models import Customer, Order, OrderItem, Product, Refund
 from datetime import datetime
 
 from services.EmailService import EmailService
@@ -50,6 +50,15 @@ def update_refund_service(db: Session, refund_id: str, refund_data):
         f"has been {refund.status}."
     )
     subject = "About your refund request"
+
+    if refund.status == "Approved":
+        order_item = db.query(OrderItem).filter(OrderItem.order_item_id == refund.order_item_id).first()
+        product = db.query(Product).filter(Product.product_id == order_item.product_id).first()
+
+        product.quantity += order_item.quantity
+
+        db.commit()
+        db.refresh(product)
 
     EmailService.send_discount_email(customer_email,subject ,msg)
 
