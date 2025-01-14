@@ -3,7 +3,7 @@ import uuid
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from models.models import Category, CategoryDB, Product, ProductCreate, ProductDB, ProductUpdate
+from models.models import Category, CategoryDB, Product, ProductCreate, ProductDB, ProductUpdate, ProductSchema, ProductDiscountSchema
 from services.services import ProductService
 from dbContext import get_db  # This dependency function provides the database session
 
@@ -32,7 +32,7 @@ def get_product_category(product_id: str, db: Session = Depends(get_db)):
     return service.get_category_info_of_product(product_id)
     
 
-@router.get("/", response_model=List[Product])
+@router.get("/", response_model=List[ProductDiscountSchema])
 async def get_all_products(db: Session = Depends(get_db)):
     service = ProductService(db)
     return service.get_all_products()
@@ -58,7 +58,57 @@ async def get_products_sorted_by_price(
     
     return service.get_products_sorted_by_price(order)
 
+# TUNAHAN - yeni eklenen path ler
 
+# return the categories which have no parent category
+@router.get("/categories/root", response_model=List[CategoriesSchema])
+async def get_root_categories(db: Session = Depends(get_db)):
+    service = ProductService(db)
+    return service.get_root_categories()
+
+# return the categories which have the specified parent category
+@router.get("/categories/parent/{parent_id}", response_model=List[CategoriesSchema])
+async def get_categories_by_parent_id(parent_id: int, db: Session = Depends(get_db)):
+    service = ProductService(db)
+    return service.get_categories_by_parent_id(parent_id)
+
+# root category girilirse subcategorilerindeki ürünler de dönülsün - detailed "/getproduct/category/{category_id}"
+@router.get("/getproduct/category/detailed/{category_id}", response_model=List[ProductDiscountSchema])
+async def get_products_by_category_id(category_id: int, db: Session = Depends(get_db)):
+    service = ProductService(db)
+    return service.get_products_by_category_id(category_id)
+
+
+# FILTERS
+class ProductFilterParams(BaseModel):
+    sub_category: Optional[int] = None
+    price_min: Optional[float] = None
+    price_max: Optional[float] = None
+    rating_min: Optional[float] = None
+    warranty_status: Optional[int] = None
+
+
+@router.post("/filterproducts/category/{category_id}", response_model=List[ProductDiscountSchema])
+async def filter_products(
+    category_id: int,
+    filters: ProductFilterParams,
+    db: Session = Depends(get_db),
+):
+    """
+    Filter products based on subcategory, price range, rating, and warranty status.
+
+    Args:
+        category_id (int): The ID of the root category.
+        filters (dict): Dictionary containing filter parameters.
+        db (Session): The database session dependency.
+
+    Returns:
+        List[Product]: List of filtered products.
+    """
+    service = ProductService(db)
+    return service.filter_products(category_id, filters)    
+
+# ---
 
 @router.get("/popular", response_model=List[Product])
 def get_products_sorted_by_popularity(db: Session = Depends(get_db)):
@@ -67,7 +117,7 @@ def get_products_sorted_by_popularity(db: Session = Depends(get_db)):
     return popular_products
 
 
-@router.get("/{product_id}", response_model=Product)
+@router.get("/{product_id}", response_model=ProductDiscountSchema)
 async def get_product(product_id: str = Path(..., regex=r"^[a-fA-F0-9-]{36}$"), db: Session = Depends(get_db)):
     service = ProductService(db)
     product = service.get_product_by_id(product_id)
@@ -139,30 +189,24 @@ async def search_products(request: Request, db: Session = Depends(get_db)):
     return service.search_product_by_name_description(query)
     # Query the database for matching products
 
+
+
+
 @router.get('/get/categories', response_model=List[CategoriesSchema])
 async def get_categories(db: Session = Depends(get_db)):
     return db.query(CategoryDB).all()
 
 
-class ProductSchema(BaseModel):
-    product_id: str
-    name: str
-    model: str
-    description: Optional[str]
-    category_id: Optional[int]
-    quantity: int
-    price: float
-    distributor: Optional[str]
-    image_url: Optional[str]
 
-    class Config:
-        orm_mode = True
 
 @router.get("/getproduct/category/{category_id}", response_model=List[ProductSchema])
 async def get_products_by_category(
     category_id: int,
     db: Session = Depends(get_db)
 ):
+    """
+    Get products by category ID.
+    """
     print(f"Received category_id: {category_id}")  # Log the incoming category_id
     try:
         if category_id is not None:
@@ -178,3 +222,20 @@ async def get_products_by_category(
         print(f"Error: {e}")
         raise HTTPException(status_code=500, detail="Server Error")
 
+
+@router.get("/products/discounted-by-rate", response_model=List[ProductDiscountSchema])
+async def get_discounted_products_by_rate(db: Session = Depends(get_db)):
+    """
+    Get discounted products sorted by discount rate.
+    """
+    service = ProductService(db)
+    return service.get_discounted_products(sort_by="rate")
+
+
+@router.get("/products/discounted-by-end-date", response_model=List[ProductDiscountSchema])
+async def get_discounted_products_by_end_date(db: Session = Depends(get_db)):
+    """
+    Get discounted products sorted by discount end date.
+    """
+    service = ProductService(db)
+    return service.get_discounted_products(sort_by="end_date")

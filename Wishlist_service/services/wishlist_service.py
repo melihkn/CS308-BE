@@ -1,15 +1,24 @@
 from sqlalchemy.orm import Session
-from models.models import Wishlist
+
+
 from schemas import WishlistCreate
+from jose import jwt, JWTError
 
 class WishlistService:
-    def create_wishlist(self, wishlist_data: WishlistCreate, db: Session) -> Wishlist:
+    def     create_wishlist(self, wishlist_data: WishlistCreate, db: Session) -> Wishlist:
         """Create a new wishlist."""
         # lets check whether there is a wishlist with the same name and active status   
         wishlist = db.query(Wishlist).filter(Wishlist.name == wishlist_data.name, Wishlist.wishlist_status == "active").first()
         if wishlist:
             raise ValueError("Wishlist with the same name already exists")
 
+        # Secret key to encode and decode JWT tokens
+        SECRET_KEY = "e8e7e4"
+        # Algorithm used to encode and decode JWT tokens (HS256 = HMAC with SHA-256)
+        ALGORITHM = "HS256"
+        payload = jwt.decode(wishlist_data.customer_id,SECRET_KEY,ALGORITHM)
+        usermail = payload.get("sub")
+        wishlist_data.customer_id = (db.query(Customer).filter(Customer.email == usermail)).first().user_id
         # if not exists create a new wishlist
         new_wishlist = Wishlist(
             name=wishlist_data.name,
@@ -24,7 +33,15 @@ class WishlistService:
     def get_wishlists_by_customer(self, customer_id: str, db: Session) -> list[Wishlist]:
         """Retrieve all active wishlists for a specific customer."""
         # if no customer found , raise Value error
-        customer = db.query(Wishlist).filter(Wishlist.customer_id == customer_id).first()
+        SECRET_KEY = "e8e7e4"
+        # Algorithm used to encode and decode JWT tokens (HS256 = HMAC with SHA-256)
+        ALGORITHM = "HS256"
+        payload = jwt.decode(customer_id,SECRET_KEY,ALGORITHM)
+        usermail = payload.get("sub")
+        customer_id = (db.query(Customer).filter(Customer.email == usermail)).first().user_id
+        
+
+        customer = db.query(Customer).filter(Customer.user_id == customer_id).first()
         if not customer:
             raise ValueError("Customer not found")
 

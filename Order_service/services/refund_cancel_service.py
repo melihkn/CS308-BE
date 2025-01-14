@@ -1,10 +1,10 @@
 
-from datetime import datetime
+from datetime import datetime, timedelta
 import uuid
 from sqlalchemy.orm import Session
 from typing import List
 from schemas.refund_cancel_schemas import CancelRequestSchema, CancelResponseSchema, RefundRequestSchema, RefundResponseSchema, RefundSchema
-from models.models import Customer, OrderItem, Order, Refund
+from models.models import Customer, Delivery, OrderItem, Order, Product, Refund
 from utils.db_utils import get_db
 from utils.order_settings import settings
 from fastapi import HTTPException
@@ -37,7 +37,7 @@ def refund_products(refund_request: RefundRequestSchema, db: Session, token: str
 
         if not user:
             print("User not found")
-            raise HTTPException(status_code=404, detail="User not found")
+            raise ValueError(status_code=404, detail="User not found")
         
 
         # Check if the order and order items exists and belongs to the user
@@ -45,21 +45,21 @@ def refund_products(refund_request: RefundRequestSchema, db: Session, token: str
 
         if order.order_status == "CANCELLED" or order.order_status == "REFUNDED":
             print("Order already cancelled or refunded")
-            raise HTTPException(status_code=400, detail="Order already cancelled or refunded")
+            raise ValueError(status_code=400, detail="Order already cancelled or refunded")
         
         if (datetime.utcnow() - order.order_date).days > 30:
             print("Cannot refund order after 30 days")
-            raise HTTPException(status_code=400, detail="Cannot refund order after 30 days")
+            raise ValueError(status_code=400, detail="Cannot refund order after 30 days")
 
         if not order:
             print("Order not found")
-            raise HTTPException(status_code=404, detail="Order not found")
+            raise ValueError(status_code=404, detail="Order not found")
 
         
         
         if order.customer_id != user.user_id:
             print("User not authorized to refund this order")
-            raise HTTPException(status_code=403, detail="User not authorized to refund this order")
+            raise ValueError(status_code=403, detail="User not authorized to refund this order")
         
 
         # Create refund objects
@@ -72,7 +72,7 @@ def refund_products(refund_request: RefundRequestSchema, db: Session, token: str
 
             if refund:
                 print("Refund already exists for this order item")
-                continue
+                raise ValueError("Refund already exists for this order item")
             
 
             refund = Refund(
@@ -186,6 +186,16 @@ def cancel_order_service(cancel_request: CancelRequestSchema, db: Session, token
             raise HTTPException(status_code=400, detail="Cannot cancel refunded order")
         
         order.order_status = 4
+
+        delivery = db.query(Delivery).filter(Delivery.order_id == order.order_id).first()
+
+        delivery.delivery_status = "CANCELLED"
+
+        order_items = db.query(OrderItem).filter(OrderItem.order_id == order.order_id).all()
+
+        for item in order_items:
+            product = db.query(Product).filter(Product.product_id == item.product_id).first()
+            product.stock += item.quantity
 
         db.commit()
 

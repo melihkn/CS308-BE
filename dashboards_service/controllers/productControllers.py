@@ -14,8 +14,6 @@ class ProductUpdate(BaseModel):
     model: Optional[str] = None
     description: Optional[str] = None
     category_id: Optional[int] = None
-    pm_id: Optional[str] = None
-    sm_id: Optional[str] = None
     serial_number: Optional[str] = None
     quantity: Optional[int] = None
     warranty_status: Optional[int] = None

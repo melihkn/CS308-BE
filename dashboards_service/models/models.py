@@ -88,7 +88,7 @@ class Order(Base):
     customer_id = Column(CHAR(36), ForeignKey('customers.user_id'))
     total_price = Column(DECIMAL(10, 2), nullable=False)
     order_date = Column(DateTime, nullable=False, default=datetime.utcnow)
-    order_status = Column(String(50), nullable=False)
+    order_status = Column(Integer, nullable=False)
     payment_status = Column(String(50), nullable=False)
     invoice_link = Column(String(255))
 
@@ -133,7 +133,7 @@ class Refund(Base):
     request_date = Column(DateTime, nullable=False, default=datetime.utcnow)
     status = Column(String(50), nullable=False)
     refund_amount = Column(DECIMAL(10, 2), nullable=False)
-    sm_id = Column(CHAR(36), ForeignKey('sales_managers.sm_id'))
+    
 
 # Delivery Table
 class Delivery(Base):
@@ -161,7 +161,6 @@ class Review(Base):
     product_id = Column(CHAR(36), ForeignKey('products.product_id'))
     rating = Column(Integer, nullable=False)
     comment = Column(Text)
-    pm_id = Column(CHAR(36), ForeignKey('product_managers.pm_id'))
     approval_status = Column(String(50), nullable=False)
 
 # Shopping Cart Table

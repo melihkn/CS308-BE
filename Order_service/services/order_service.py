@@ -6,16 +6,12 @@ from models.models import (
     Product,
     OrderItemCreateSchema, 
     OrderCreateSchema,
-    OrderResponseSchema,
-    OrderItemResponseSchema,
-    OrderStatusUpdateSchema
 )
 from sqlalchemy.exc import SQLAlchemyError
 from uuid import uuid4
-import time
 from services.InvoiceService import InvoiceService
 from services.EmailService import EmailService
-from models.models import Customer, Product
+from models.models import Customer, Product, Order, OrderItem, Delivery, Address
 
 ORDER_STATUS_MAP = {
     0: "pending",
@@ -38,6 +34,7 @@ class OrderService:
             return datetime.strptime(order_date, "%Y-%m-%d")
         except ValueError:
             raise ValueError("Invalid date format. Use '%Y-%m-%d' or '%Y-%m-%d %H:%M:%S'.")
+
 
     @staticmethod
     def create_order(order_data: OrderCreateSchema, db: Session, max_retries: int = 3):
@@ -71,6 +68,37 @@ class OrderService:
                 )
                 db.add(new_order)
                 print("Order added successfully.")
+
+                # Create delivery object for the order and add to database
+                delivery_id = str(uuid4())
+                new_address = None
+
+                # Create address if provided
+                if order_data.order_address:
+                    try:
+                        address_id = str(uuid4()) # generate a new address id 
+                        new_address = Address( 
+                            customer_adres_id= address_id, # use the address id generated above
+                            customer_id= order_data.customer_id, # use the customer id from order data
+                            address= order_data.order_address,  # Updated from order_adress
+                            type=order_data.order_address_type,  # Updated from order_adress_type
+                            name = order_data.order_address_name if order_data.order_address_name else None
+                        )
+                        db.add(new_address)
+                        print(f"Address added successfully: {new_address}")
+                    except Exception as e:
+                        print(f"Failed to add address: {str(e)}")
+                        raise e
+
+                # Create delivery object for the order and add to database
+                new_delivery = Delivery(
+                    delivery_id=delivery_id, # generate a new delivery id
+                    order_id=order_id, # use the order id generated above for the delivery
+                    delivery_status='Pending', # set the delivery status to pending by default 
+                    addres_id=new_address.customer_adres_id if new_address else None # use the address id generated above if address is provided
+                )
+                db.add(new_delivery)
+                print(f"Delivery added successfully: {new_delivery}")
 
                 # Create order items and update stock
                 for item in order_data.items:
@@ -126,6 +154,7 @@ class OrderService:
                 customer_email = customer.email
                 EmailService.send_invoice_email(customer_email, invoice_path)
 
+                
                 return new_order
 
             except ValueError as ve:
@@ -183,7 +212,9 @@ class OrderService:
         """
         orders = db.query(Order).filter_by(customer_id=customer_id).all()
         for order in orders:
-            db.refresh(order)  # Ensure items are loaded
+            db.refresh(order)  # Ensure items are loaded 
+        
+        orders.sort(key=lambda x: x.order_date, reverse=True)
         return orders
 
     @staticmethod

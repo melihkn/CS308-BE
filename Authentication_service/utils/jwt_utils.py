@@ -6,7 +6,7 @@ SECRET_KEY = "e8e7e4"
 # Algorithm used to encode and decode JWT tokens (HS256 = HMAC with SHA-256)
 ALGORITHM = "HS256"
 # Expiration time for the access token in minutes (30 minutes)
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 1000
 
 
 def create_access_token(data: dict, expires_delta: timedelta = None):

@@ -43,12 +43,18 @@ async def refund_product(refund_request: RefundRequestSchema, db=Depends(get_db)
         
 
     """
-    result = refund_products(refund_request, db, token)
-
-    if not result:
-        raise HTTPException(status_code=404, detail="Refund not created")
+    try:
+        result = refund_products(refund_request, db, token)
+    except ValueError as e:
+        raise HTTPException(status_code = 400 , detail=f"{str(e)}")
+    else:
+        raise HTTPException(status_code=500, detail="Error processing refund request")
+    finally:
+        return result
     
-    return result
+
+    
+    
 
 @router.get('/refund-status/{order_id}/{product_id}', response_model= RefundSchema, dependencies=[Depends(verify_user_role)])
 async def refund_status(order_id:str, product_id:str, db=Depends(get_db), token: str = Depends(oauth2_scheme)):

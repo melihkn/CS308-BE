@@ -162,6 +162,20 @@ class Product(Base):
     category = relationship("Category", back_populates="products")
     order_items = relationship("OrderItem", back_populates="product", cascade="all, delete-orphan")  # Correctly define the relationship here
     shopping_cart_items = relationship("ShoppingCartItem", back_populates="product", cascade="all, delete-orphan")
+    discounts = relationship("Discount", back_populates="product")
+
+class Discount(Base):
+    __tablename__ = "discount"
+
+    discount_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    product_id = Column(String(36), ForeignKey("products.product_id", ondelete="CASCADE"), nullable=True)
+    discount_rate = Column(DECIMAL(5, 2), nullable=False)
+    start_date = Column(DateTime, nullable=False)
+    end_date = Column(DateTime, nullable=False)
+    is_active = Column(Integer, nullable=False, default=1)
+
+    product = relationship("Product", back_populates="discounts")
+
 
 
 
