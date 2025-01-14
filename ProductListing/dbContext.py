@@ -2,7 +2,9 @@
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 
+
 DATABASE_URL ="mysql+pymysql://root:hachimura89@127.0.0.1:3306/myvet_db"
+
 
 
 
