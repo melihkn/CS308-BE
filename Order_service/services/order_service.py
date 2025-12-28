@@ -213,6 +213,8 @@ class OrderService:
         orders = db.query(Order).filter_by(customer_id=customer_id).all()
         for order in orders:
             db.refresh(order)  # Ensure items are loaded 
+        
+        orders.sort(key=lambda x: x.order_date, reverse=True)
         return orders
 
     @staticmethod

@@ -71,7 +71,7 @@ class ProductService:
         return self.db.query(CategoryDB).filter(CategoryDB.parentcategory_id == parent_id).all()
 
     # root category girilirse subcategorilerindeki ürünler de dönülsün - detailed "/getproduct/category/{category_id}"
-    def get_products_by_category_id(self, category_id: int) -> List[Product]:
+    def get_products_by_category_id(self, category_id: int) -> List[ProductDiscountSchema]:
         # when items from root category is wanted, we return all the products in the subcategories of that root category
         
         # if the category is a root category
@@ -89,6 +89,7 @@ class ProductService:
             for product in products:
                 reviews = self.db.query(ReviewDB).filter(and_(ReviewDB.product_id == product.product_id, ReviewDB.approval_status == "APPROVED")).all()
 
+                discount = self.db.query(Discount).filter(and_(Discount.product_id == product.product_id, Discount.is_active)).first()
                 average_rating = 0
                 
                 if len(reviews) == 0:
@@ -97,23 +98,44 @@ class ProductService:
                     for i in reviews:
                         average_rating += i.rating
                     average_rating = average_rating/len(reviews)
-
-
-                result.append(Product(
-                    product_id=product.product_id,
-                    name=product.name,
-                    model=product.model,
-                    description=product.description,
-                    quantity=product.quantity,
-                    warranty_status=product.warranty_status,
-                    distributor=product.distributor,
-                    image_url=product.image_url,
-                    item_sold=product.item_sold,
-                    price=product.price,
-                    cost=product.cost,
-                    category_id=product.category_id,
-                    average_rating=average_rating
-                    ))
+                if discount:
+                    result.append(ProductDiscountSchema(
+                        product_id=product.product_id,
+                        name=product.name,
+                        model=product.model,
+                        description=product.description,
+                        quantity=product.quantity,
+                        serial_number=product.serial_number,
+                        warranty_status=product.warranty_status,
+                        distributor=product.distributor,
+                        image_url=product.image_url,
+                        item_sold=product.item_sold,
+                        price=product.price,
+                        cost=product.cost,
+                        category_id=product.category_id,
+                        average_rating=average_rating,
+                        discount_rate=discount.discount_rate,
+                        end_date=discount.end_date,
+                        ))
+                else:
+                    result.append(ProductDiscountSchema(
+                        product_id=product.product_id,
+                        name=product.name,
+                        model=product.model,
+                        description=product.description,
+                        quantity=product.quantity,
+                        serial_number=product.serial_number,
+                        warranty_status=product.warranty_status,
+                        distributor=product.distributor,
+                        image_url=product.image_url,
+                        item_sold=product.item_sold,
+                        price=product.price,
+                        cost=product.cost,
+                        category_id=product.category_id,
+                        average_rating=average_rating,
+                        discount_rate=0,
+                        end_date=None
+                        ))
             return result
         # if the category is not a root category
         else:
@@ -129,6 +151,8 @@ class ProductService:
             reviews = self.db.query(ReviewDB).filter(and_(ReviewDB.product_id == product.product_id, ReviewDB.approval_status == "APPROVED")).all()
 
             average_rating = 0
+            discount = self.db.query(Discount).filter(and_(Discount.product_id == product.product_id, Discount.is_active)).first()
+
             
             if len(reviews) == 0:
                 average_rating = 0
@@ -138,7 +162,7 @@ class ProductService:
                 average_rating = average_rating/len(reviews)
 
 
-            results.append(Product(
+            results.append(ProductDiscountSchema(
                 product_id=product.product_id,
                 name=product.name,
                 model=product.model,
@@ -151,15 +175,76 @@ class ProductService:
                 price=product.price,
                 cost=product.cost,
                 category_id=product.category_id,
-                average_rating=average_rating
+                average_rating=average_rating,
+                discount_rate=discount.discount_rate if discount else 0,
+                end_date=discount.end_date if discount else None
+
                 ))
 
         print(results)
             
         return results
 
-    def get_product_by_id(self, product_id: str) -> Optional[ProductDB]:
-        return self.db.query(ProductDB).filter(ProductDB.product_id == product_id).first()
+    def get_product_by_id(self, product_id: str) -> Optional[ProductDiscountSchema]:
+        products = self.db.query(ProductDB).filter(ProductDB.product_id == product_id).first()
+        discounts = self.db.query(Discount).filter(and_(Discount.product_id == product_id, Discount.is_active)).first()
+
+        if(products and discounts):
+            reviews = self.db.query(ReviewDB).filter(and_(ReviewDB.product_id == product_id, ReviewDB.approval_status == "APPROVED")).all()
+            average_rating = 0
+            if (len(reviews) == 0):
+                average_rating = 0
+            else:
+                average_rating = 0
+                for i in reviews:
+                    average_rating += i.rating
+                average_rating = average_rating/len(reviews)
+            return ProductDiscountSchema(
+                product_id=products.product_id,
+                name=products.name,
+                model=products.model,
+                description=products.description,
+                serial_number=products.serial_number,
+                category_id=products.category_id,
+                quantity=products.quantity,
+                price=products.price,
+                distributor=products.distributor,
+                image_url=products.image_url,
+                item_sold=products.item_sold,
+                warranty_status=products.warranty_status,
+                cost=products.cost,
+                discount_rate=discounts.discount_rate,
+                end_date=discounts.end_date,
+                average_rating=average_rating
+            )
+        elif(products):
+            reviews = self.db.query(ReviewDB).filter(and_(ReviewDB.product_id == product_id, ReviewDB.approval_status == "APPROVED")).all()
+            average_rating = 0
+            if (len(reviews) == 0):
+                average_rating = 0
+            else:
+                average_rating = 0
+                for i in reviews:
+                    average_rating += i.rating
+                average_rating = average_rating/len(reviews)
+            return ProductDiscountSchema(
+                product_id=products.product_id,
+                name=products.name,
+                model=products.model,
+                description=products.description,
+                serial_number=products.serial_number,
+                category_id=products.category_id,
+                quantity=products.quantity,
+                price=products.price,
+                distributor=products.distributor,
+                image_url=products.image_url,
+                item_sold=products.item_sold,
+                warranty_status=products.warranty_status,
+                cost=products.cost,
+                discount_rate=0,
+                end_date=None,
+                average_rating=average_rating
+            )
 
     def create_product(self, product_data: ProductCreate) -> ProductDB:
         # Ensure product_id is not set manually; it will be auto-generated
@@ -308,6 +393,7 @@ class ProductService:
 
         for product in results:
             reviews = self.db.query(ReviewDB).filter(and_(ReviewDB.product_id == product.product_id, ReviewDB.approval_status == "APPROVED")).all()
+            discount = self.db.query(Discount).filter(and_(Discount.product_id == product.product_id, Discount.is_active)).first()
 
             average_rating = 0
 
@@ -318,7 +404,7 @@ class ProductService:
                     average_rating += i.rating
                 average_rating = average_rating/len(reviews)
             
-            products.append(Product(
+            products.append(ProductDiscountSchema(
                 product_id=product.product_id,
                 name=product.name,
                 model=product.model,
@@ -331,6 +417,8 @@ class ProductService:
                 price=product.price,
                 cost=product.cost,
                 category_id=product.category_id,
+                discount_rate=discount.discount_rate if discount else 0,
+                end_date=discount.end_date if discount else None,
                 average_rating=average_rating
                 ))
             
@@ -405,9 +493,41 @@ class ProductService:
         if filter_params.warranty_status is not None:
             products = products.filter(ProductDB.warranty_status >= filter_params.warranty_status)
 
+        results = []
+
+        for product in products:
+            discount = self.db.query(Discount).filter(and_(Discount.product_id == product.product_id, Discount.is_active)).first()
+            reviews = self.db.query(ReviewDB).filter(and_(ReviewDB.product_id == product.product_id, ReviewDB.approval_status == "APPROVED")).all()
+
+            average_rating = 0
+
+            if len(reviews) != 0:
+                for i in reviews:
+                    average_rating += i.rating
+            
+
+            results.append(ProductDiscountSchema(
+                product_id=product.product_id,
+                name=product.name,
+                model=product.model,
+                description=product.description,
+                quantity=product.quantity,
+                serial_number=product.serial_number,
+                warranty_status=product.warranty_status,
+                distributor=product.distributor,
+                image_url=product.image_url,
+                item_sold=product.item_sold,
+                price=product.price,
+                cost=product.cost,
+                average_rating=average_rating,
+                category_id=product.category_id,
+                discount_rate=discount.discount_rate if discount else 0,
+                end_date=discount.end_date if discount else None
+            ))
+
 
         # Execute the query and return results
-        return products
+        return results
 
     def get_discounted_products(self, sort_by: str = "rate") -> List[ProductDiscountSchema]:
         """

@@ -1,0 +1,4 @@
+test_setting.py DONE
+test_product_services.py DONE
+test_category_services DONE
+test_health_check DONE

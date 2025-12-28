@@ -1,9 +1,9 @@
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, declarative_base
+from models.models import Product, Wishlist, WishlistItem, Customer
 
 
-DATABASE_URL ="mysql+pymysql://root:TunahanTunahan987.%2C@127.0.0.1:3306/CS308_Project"
+DATABASE_URL ="mysql+pymysql://root:hachimura89@127.0.0.1:3306/myvet_db"
 
 
 # SQLAlchemy engine

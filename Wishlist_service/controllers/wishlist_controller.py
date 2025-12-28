@@ -1,12 +1,13 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from dbContext import get_db
-from models import Wishlist
+from models.models import Wishlist
 from schemas import WishlistCreate, WishlistResponse
 from services.wishlist_service import WishlistService
 
 router = APIRouter()
 wishlist_service = WishlistService()
+
 
 
 """
@@ -56,6 +57,7 @@ example output from the get_wishlists endpoint:
 @router.get("/get/{customer_id}", response_model=list[WishlistResponse])
 def get_wishlists(customer_id: str, db: Session = Depends(get_db)):
     """Get all wishlists for a customer."""
+    """After some modificitations customer id is sent as a tokent itself, then token is decoded in wishlist service"""
     try:
         WishLists = wishlist_service.get_wishlists_by_customer(customer_id, db)
         return WishLists

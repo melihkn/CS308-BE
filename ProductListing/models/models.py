@@ -77,8 +77,11 @@ class ProductDiscountSchema(BaseModel):
     item_sold: Optional[int] = 0
     warranty_status: Optional[int] = None
     cost: Optional[float] = 0.0
-    discount_rate: float
-    end_date: datetime
+
+    discount_rate: Optional[float] = 0.0
+    end_date: Optional[datetime] = None
+
+    average_rating: Optional[float] = None
 
     class Config:
         from_attributes = True
@@ -188,3 +191,14 @@ class ProductUpdate(BaseModel):
 
 class user2(BaseModel):
     username: Optional[str] = None
+
+# Product Managers Table
+class ProductManager(Base):
+    __tablename__ = 'product_managers'
+    pm_id = Column(CHAR(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    name = Column(String(50), nullable=False)
+    middlename = Column(String(50))
+    surname = Column(String(50), nullable=False)
+    email = Column(String(100), unique=True, nullable=False)
+    password = Column(String(255), nullable=False)  # store hashed password
+    phone_number = Column(String(20))

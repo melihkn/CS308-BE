@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from models.models import Customer, ProductManager, SalesManager, Admin
+from models.models import Customer, ProductManager, SalesManager, Admin, Address
 from utils.jwt_utils import create_access_token, decode_access_token
 from utils.hashing_utils import hash_password, verify_password
 from fastapi import HTTPException, status
@@ -55,6 +55,15 @@ class AuthService:
         # If no user is found, raise an exception
         if not user:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        
+
+        # we will take the address from the address table:
+        # address = db.query(Address).filter(Address.customer_id == user.user_id).first()
+        address_of_user = None
+        if role == "customer":
+            address_of_user = db.query(Address).filter(Address.customer_id == user.user_id).first()
+            address_of_user = address_of_user.address if address_of_user else "No address"
+    
 
         # Return user information if valid
         return {
@@ -64,6 +73,7 @@ class AuthService:
             "surname": user.surname,
             "email": user.email,
             "phone_number": user.phone_number,
+            "user_adress": address_of_user,
             "role": role
         }
 

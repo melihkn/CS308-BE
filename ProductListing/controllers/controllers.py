@@ -32,7 +32,7 @@ def get_product_category(product_id: str, db: Session = Depends(get_db)):
     return service.get_category_info_of_product(product_id)
     
 
-@router.get("/", response_model=List[Product])
+@router.get("/", response_model=List[ProductDiscountSchema])
 async def get_all_products(db: Session = Depends(get_db)):
     service = ProductService(db)
     return service.get_all_products()
@@ -73,7 +73,7 @@ async def get_categories_by_parent_id(parent_id: int, db: Session = Depends(get_
     return service.get_categories_by_parent_id(parent_id)
 
 # root category girilirse subcategorilerindeki ürünler de dönülsün - detailed "/getproduct/category/{category_id}"
-@router.get("/getproduct/category/detailed/{category_id}", response_model=List[Product])
+@router.get("/getproduct/category/detailed/{category_id}", response_model=List[ProductDiscountSchema])
 async def get_products_by_category_id(category_id: int, db: Session = Depends(get_db)):
     service = ProductService(db)
     return service.get_products_by_category_id(category_id)
@@ -88,7 +88,7 @@ class ProductFilterParams(BaseModel):
     warranty_status: Optional[int] = None
 
 
-@router.post("/filterproducts/category/{category_id}", response_model=List[Product])
+@router.post("/filterproducts/category/{category_id}", response_model=List[ProductDiscountSchema])
 async def filter_products(
     category_id: int,
     filters: ProductFilterParams,
@@ -117,7 +117,7 @@ def get_products_sorted_by_popularity(db: Session = Depends(get_db)):
     return popular_products
 
 
-@router.get("/{product_id}", response_model=Product)
+@router.get("/{product_id}", response_model=ProductDiscountSchema)
 async def get_product(product_id: str = Path(..., regex=r"^[a-fA-F0-9-]{36}$"), db: Session = Depends(get_db)):
     service = ProductService(db)
     product = service.get_product_by_id(product_id)
@@ -189,14 +189,14 @@ async def search_products(request: Request, db: Session = Depends(get_db)):
     return service.search_product_by_name_description(query)
     # Query the database for matching products
 
+
+
+
 @router.get('/get/categories', response_model=List[CategoriesSchema])
 async def get_categories(db: Session = Depends(get_db)):
     return db.query(CategoryDB).all()
 
 
-
-
-    
 
 
 @router.get("/getproduct/category/{category_id}", response_model=List[ProductSchema])
@@ -221,6 +221,7 @@ async def get_products_by_category(
     except Exception as e:
         print(f"Error: {e}")
         raise HTTPException(status_code=500, detail="Server Error")
+
 
 @router.get("/products/discounted-by-rate", response_model=List[ProductDiscountSchema])
 async def get_discounted_products_by_rate(db: Session = Depends(get_db)):
